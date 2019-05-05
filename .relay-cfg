@@ -1,0 +1,49 @@
+app
+{
+  update_timer 5
+  webserver_port 30080
+}
+
+board
+{
+  name b1
+  type ada_ft232h
+  port /dev/ttyUSB0
+  num-chan 16
+}
+
+socket
+{
+  name hall01
+  board b1
+  channel 00
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [  
+    0 on @  sr - 00:30 if before 07:30        
+    1 on @ 07:30 if before sr + 00:30
+    2 off @  sr + 00:30 if before 08:00        
+    3 off @ 08:00 if before sr + 00:30~00:05 
+    4 on @  ss - 00:30~00:05 if after 17:00        
+    5 off @  17:00  if after ss - 00:30~00:05 
+  ]
+}
+
+socket
+{
+  name hall02
+  board b1
+  channel 01
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [  
+       0 off @ sr+00:30 if before 08:00
+       1 off @ 08:00 if before sr+00:30
+       2 on @  ss-00:30 if after 17:00
+       3 on @  17:00 if after ss-00:30
+  ]
+}

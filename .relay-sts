@@ -1,0 +1,26 @@
+hall02
+{
+  state 1
+  # [on/off]
+  auto-status  off
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-status force-on
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-session-state -1
+  # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
+  override-t-until None
+}
+
+hall01
+{
+  state 3
+  # [on/off]
+  auto-status  off
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-status force-on
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-session-state -1
+  # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
+  override-t-until None
+}
+
