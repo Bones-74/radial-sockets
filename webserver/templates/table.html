@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+      <table border = 1>
+         <tr>
+         {% for title in titles %}
+            <th> {{ title }} </th>
+         {% endfor %}
+         </tr>
+         {% set index = [0] %}
+         {% set ovr_sts = [0] %}
+         {% for key, socket in sockets.items() %}
+            <tr>
+            {% for title in titles %}
+                  {% set value = socket[title] %}
+                  <td> {{ value }} </td>
+                  {% set x = ovr_sts.pop() %}
+                  {% if ovr_sts.append(value) %}{% endif %}
+            {% endfor %}
+            <td>
+            <form action = "http://localhost:30080/override_cmd" method = "post">
+            <input type="hidden" name='skt_id' value={{key}} />
+            <select name='ovr_sel' onchange='this.form.submit()' autocomplete="off">
+            <!--
+             OVR_INACTIVE    = 0
+             OVR_SESSION_ON  = 1
+             OVR_SESSION_OFF = 2
+             OVR_FORCE_ON    = 3
+             OVR_FORCE_OFF   = 4
+             OVR_ON_UNTIL    = 5
+             OVR_OFF_UNTIL   = 6
+            -->
+            {% for ovr_id,ovr_str in ovrs.items() %}
+               {% if ovr_sts[0] == ovr_id %}
+                   <!--   <option selected data-id={{index[0]}} data-ovr={{ovr_id}}>{{ovr_str}}</option> -->
+                   <!--      <option selected value={{ovr_id}}>{{ovr_str}}</option>  -->
+                   <option selected>{{ovr_str}}</option>
+               {% else %}
+                    <!--  <option value={{ovr_id}}>{{index[0]}}:{{ovr_str}}</option>  -->
+                      <option>{{ovr_str}}</option>
+               {% endif %}
+            {% endfor %}
+            </select>
+            <noscript><input type="submit" value="Submit"></noscript>
+            </form>            
+            {% if index.append(index.pop() + 1) %}{% endif %} 
+            </td>
+            </tr>
+         {% endfor %}
+      </table>
+
+   </body>
+   
+</html>
+  
+  
+  
