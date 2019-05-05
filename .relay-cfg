@@ -1,7 +1,8 @@
 app
 {
-  update_timer 5
+  update_timer 50
   webserver_port 30080
+  location -1.82:52.9
 }
 
 board

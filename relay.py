@@ -5,10 +5,11 @@ import threading
 
 from config import Config, App
 from status import OverrideStatus, SocketStatus, PowerStatus, Status
-from time_utils import time_now, getDateAndTime
+from time_utils import time_now, getDateAndTime, get_sun, set_location_coords
 from control import Control
 #from time import sleep
 from webserver.webserver_01 import web_svr, webserver_set_config_status
+from Sun import Sun
 
 class relay_exit_codes():
     EXIT_CODE_OK = 0
@@ -313,6 +314,11 @@ def send_next_statuses (config, status):
 sem = threading.Semaphore()
 def relay_process(control, config, status, overrides):
     try:
+        # fill in todays sunrise/sunset details
+        sun = get_sun()
+        control.sunrise = sun.getSunriseTime(time_now())
+        control.sunset = sun.getSunsetTime(time_now())
+
         # grab the semaphore to gaurd shared resource
         sem.acquire()
 
@@ -457,6 +463,7 @@ def main__run_from_commandline(args=None,debug_in=None):
 
     # now take the info read from the config and status files and process the info
     control = Control()
+    set_location_coords (config.app.coords)
     err_code = relay_process(control, config, status, new_overrides)
 
     # re-write the status file
@@ -475,7 +482,7 @@ def main__run_from_commandline(args=None,debug_in=None):
             if config.app.webserver_active:
                 # Start the webserver used for controlling the app
                 #thread = threading.Thread(target=websrv_01.run, kwargs={'port': config.app.webserver_port,'debug': True})
-                webserver_set_config_status(config, status, relay_process)
+                webserver_set_config_status(control, config, status, relay_process)
                 thread = threading.Thread(target=web_svr.run, kwargs={'port': config.app.webserver_port})
                 thread.start()
                 pass

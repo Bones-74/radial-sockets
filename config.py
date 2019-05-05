@@ -12,6 +12,7 @@ class config_kw():
     APP_TIMER_KW = 'update_timer'
     APP_WEBSERVER_PORT = 'webserver_port'
     APP_SOCKET_PORT = 'socket_port'
+    APP_LOCATION_COORDS = 'location'
 
     BOARD_KW = 'board'
     BOARD_NAME_KW = 'name'
@@ -33,8 +34,9 @@ class App(object):
     APP_DEFAULT_WEB_SERVER_PORT = 30080
     APP_MISSING_TXT = "**missing**"
     APP_MISSING_VALUE = -1
-    def __init__(self, update_timer, socket_port, webserver_port):
+    def __init__(self, update_timer, coords, socket_port, webserver_port):
         self.update_timer = update_timer
+        self.coords = coords
         self.socket_active = socket_port != App.APP_MISSING_VALUE
         self.socket_port = socket_port
         self.webserver_active = webserver_port != App.APP_MISSING_VALUE
@@ -54,8 +56,14 @@ class App(object):
                 socket_port = int(line_parts[1].strip())
             if line_parts[0].strip() == config_kw.APP_WEBSERVER_PORT:
                 webserver_port = int(line_parts[1].strip())
+            if line_parts[0].strip() == config_kw.APP_LOCATION_COORDS:
+                coords_str = line_parts[1].strip()
+                coords_xy = coords_str.split(":")
+                coord_x = float(coords_xy[0])
+                coord_y = float(coords_xy[1])
+                coords =  {'longitude' : coord_x, 'latitude' : coord_y }
 
-        app = App(app_timeout, socket_port, webserver_port)
+        app = App(app_timeout, coords, socket_port, webserver_port)
         return app
 
 

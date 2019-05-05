@@ -24,6 +24,7 @@ class relay_webserver(Flask):
 '''
 from status import OverrideStatus
 
+relay_control = None
 relay_config = None
 relay_status = None
 relay_func = None
@@ -42,6 +43,8 @@ def index():
     global relay_status
     titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
     return render_template('table.html',
+                           control=relay_control,
+                           config=relay_config,
                            titles = titles,
                            sockets=relay_status.sockets,
                            ovrs=OverrideStatus.GetOvrs())
@@ -59,18 +62,20 @@ def override_cmd():
 
 
         global relay_func
-        relay_func (None, relay_config, relay_status, overrides)
+        relay_func (relay_control, relay_config, relay_status, overrides)
 
 
     return redirect(url_for('index'))
 
-def webserver_set_config_status (config, status, func):
+def webserver_set_config_status (control, config, status, func):
+    global relay_control
     global relay_config
     global relay_status
     global relay_func
     relay_func = func
     relay_config = config
     relay_status = status
+    relay_control = control
 
 if __name__ == '__main__':
     web_svr.run()

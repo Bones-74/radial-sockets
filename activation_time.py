@@ -1,8 +1,7 @@
 import datetime
 
 
-from Sun import Sun
-from time_utils import time_now, ParseSimpleTime
+from time_utils import time_now, ParseSimpleTime, get_sun
 
 SUNRISE_STR = 'sr'
 SUNSET_STR = 'ss'
@@ -31,17 +30,16 @@ class ActivationTime(object):
 
     def convert_to_local_time(self, basetime, modifier, rand):
         now = time_now()
-        sun = Sun()
-        coords = {'longitude' : -1.82, 'latitude' : 52.9 }
+        sun = get_sun()
 
         if basetime.strip() == SUNSET_STR:
-            ss_time = sun.getSunsetTime(coords, date=now)
+            ss_time = sun.getSunsetTime(date=now)
             hours = ss_time['dt'].hour
             minutes = ss_time['dt'].minute
             self.basetime = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         elif basetime.strip() == SUNRISE_STR:
-            ss_time = sun.getSunriseTime(coords, date=now)
+            ss_time = sun.getSunriseTime(date=now)
             hours = ss_time['dt'].hour
             minutes = ss_time['dt'].minute
             self.basetime = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)

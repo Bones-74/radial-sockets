@@ -6,6 +6,8 @@ class Control(object):
         self.run_event = Event()
         self.exit_now = False
         self.timer_val = 0;
+        self.sunrise = 0
+        self.sunset = 0
 
     def schedule_logic_run(self):
         # Activate the event to let the desired

@@ -2,6 +2,9 @@ import pytz
 import datetime
 import time
 
+from Sun import Sun
+
+location_coords = {'longitude' : -1.82, 'latitude' : 52.9 }
 
 testing_time = None
 def set_test_time(ttime_hrs,ttime_mins,ttime_sec=0, basedate=None):
@@ -23,6 +26,14 @@ def time_now():
         return AssignAsLocalTime(testing_time)
     else:
         return AssignAsLocalTime(datetime.datetime.now())
+
+
+def set_location_coords(coords):
+    global location_coords
+    location_coords = coords
+
+def get_sun():
+    return Sun(location_coords)
 
 
 def AssignAsLocalTime(dt_lcl):

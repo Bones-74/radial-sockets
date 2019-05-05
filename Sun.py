@@ -4,14 +4,18 @@ import math
 import datetime
 
 class Sun:
+    def __init__(self, coords=None):
+        if coords is None:
+            coords = {'longitude' : -1.82, 'latitude' : 52.9 }
+        self.coords = coords
 
-    def getSunriseTime( self, coords, date=None ):
-        return self.calcSunTime( coords, True, date)
+    def getSunriseTime( self, date=None ):
+        return self.calcSunTime(True, date)
 
-    def getSunsetTime( self, coords, date=None):
-        return self.calcSunTime( coords, False, date)
+    def getSunsetTime( self, date=None):
+        return self.calcSunTime(False, date)
 
-    def calcSunTime( self, coords, isRiseTime, calcdate, zenith = 90.8 ):
+    def calcSunTime( self, isRiseTime, calcdate, zenith = 90.8 ):
 
         # isRiseTime == False, returns sunsetTime
         if not calcdate:
@@ -20,8 +24,8 @@ class Sun:
         month = calcdate.month
         year = calcdate.year
 
-        longitude = coords['longitude']
-        latitude = coords['latitude']
+        longitude = self.coords['longitude']
+        latitude = self.coords['latitude']
 
         TO_RAD = math.pi/180
 
