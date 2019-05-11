@@ -24,7 +24,7 @@
             {% for title in titles %}
                {% set value = socket[title] %}
                {% if title == "name" %}
-                   <td> {{ value }} </td>
+                   <td> <a href="http://localhost:30080/socket_info/{{ value }}">{{ value }} </a></td>
                {% elif title == "ovr_sts" %}
                   {% set x = ovr_sts.pop() %}
                   {% if ovr_sts.append(value) %}{% endif %}

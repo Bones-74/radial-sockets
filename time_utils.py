@@ -7,7 +7,24 @@ from Sun import Sun
 location_coords = {'longitude' : -1.82, 'latitude' : 52.9 }
 
 testing_time = None
-def set_test_time(ttime_hrs,ttime_mins,ttime_sec=0, basedate=None):
+def calc_test_time(ttime_hrs,ttime_mins, basedate=None):
+    try:
+        if basedate:
+            timenow = basedate
+        else:
+            timenow = datetime.datetime.now()
+        ttime = timenow.replace(hour=ttime_hrs, minute=ttime_mins, second=0, microsecond=0)
+    except ValueError:
+        ttime = None
+
+    return ttime
+
+def activate_test_time(ttime):
+    global testing_time
+
+    testing_time = ttime
+
+def calc_and_activate_test_time(ttime_hrs,ttime_mins, basedate=None):
     global testing_time
 
     try:
@@ -15,11 +32,16 @@ def set_test_time(ttime_hrs,ttime_mins,ttime_sec=0, basedate=None):
             timenow = basedate
         else:
             timenow = datetime.datetime.now()
-        testing_time = timenow.replace(hour=ttime_hrs, minute=ttime_mins, second=ttime_sec, microsecond=0)
+        testing_time = timenow.replace(hour=ttime_hrs, minute=ttime_mins, second=0, microsecond=0)
     except ValueError:
         testing_time = None
 
     return testing_time
+
+def deactivate_test_time():
+    global testing_time
+
+    testing_time = None
 
 def time_now():
     if testing_time:

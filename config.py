@@ -42,6 +42,8 @@ class App(object):
         self.webserver_active = webserver_port != App.APP_MISSING_VALUE
         self.webserver_port = webserver_port
 
+    def clone (self):
+        return App(self.update_timer, self.coords, self.socket_port, self.webserver_port)
 
     @staticmethod
     def parse_app (app_def):
@@ -147,31 +149,44 @@ class Socket(object):
     def add_states (self, states):
         self.states = states
 
-    def calc_status(self, skt_status):
+    def calc_status(self, skt_status, timenow):
         # using the current status of the socket, as read from the status file,
         # and the current date/time, work out which state this socket should
-        # be in and wheter it should be on of off
+        # be in and wheter it should be on or off
 
-        timenow = time_now()
-#        timenow = AssignAsLocalTime(time_now())
+#        timenow = time_now()
 
         # prepare next state as the last one defined, ie, the one that
         # stretches over midnight into the new day
         next_state = self.states [-1]
         for state in self.states:
-            state_start = state.activation_time.activation_time_lcl.time()
+            state_start = state.activation_time.update_activation_time(timenow).time()
             if state_start <= timenow.time():
                 next_state = state
 
         skt_status.calcd_state = next_state.id
         skt_status.calcd_auto_sts = next_state.power_state
 
+    def clone (self):
+        skt_ = Socket (self.name, self.board, self.channel)
+        states_ = []
+        for skt_state in self.states:
+            states_.append(skt_state.clone())
+
+        skt_.add_states(states_)
+
+        return skt_
 
 class SocketState(object):
-    def __init__(self, s_id, power_state, activation_time):
+    def __init__(self, s_id, power_state, activation_time, state_txt):
         self.id = int (s_id)
         self.power_state = power_state
         self.activation_time = activation_time
+        self.state_txt = state_txt
+
+    def clone (self):
+        skt_ = SocketState (self.id, self.power_state, self.activation_time, self.state_txt)
+        return skt_
 
     @staticmethod
     def parse_state (state_id, state_txt):
@@ -202,7 +217,7 @@ class SocketState(object):
         else:
             power_id = None
 
-        ss = SocketState(state_id, power_id, activatation_time)
+        ss = SocketState(state_id, power_id, activatation_time, state_txt)
         return ss
 
     @staticmethod
@@ -249,6 +264,9 @@ class Config(object):
 
     def add_board (self, new_board):
         self.boards[new_board.name] = new_board
+
+    def remove_board (self, board_name):
+        self.boards.pop(board_name)
 
     def add_socket (self, new_socket):
         self.sockets[new_socket.name] = new_socket
@@ -304,6 +322,14 @@ class Config(object):
 
 
         return self.CONFIG_OK, None
+
+    def clone (self):
+        cfg_clone = Config()
+        for skt_name, skt in self.sockets.items():
+            skt_clone = skt.clone()
+            cfg_clone.add_socket(skt_clone)
+
+        return cfg_clone
 
     @staticmethod
     def parse_config_info(config_arr):

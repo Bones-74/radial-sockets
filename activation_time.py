@@ -1,7 +1,7 @@
 import datetime
 
 
-from time_utils import time_now, ParseSimpleTime, get_sun
+from time_utils import time_now, ParseSimpleTime, get_sun, ConvertToLocalTime
 
 SUNRISE_STR = 'sr'
 SUNSET_STR = 'ss'
@@ -9,45 +9,70 @@ SUNSET_STR = 'ss'
 class ActivationTime(object):
     def __init__(self, basetime, floor, ceiling):
 
+        self.last_activation_time = ConvertToLocalTime(datetime.datetime.min + datetime.timedelta(days=100))
 
-        base_t = self.convert_to_local_time(basetime ["base"], basetime ["mod"], basetime ["rand"])
-        ceil_t = 0
-        floor_t = 0
-        if ceiling is not None:
-            ceil_t = self.convert_to_local_time(ceiling ["base"], ceiling ["mod"], ceiling ["rand"])
-        if floor is not None:
-            floor_t = self.convert_to_local_time(floor ["base"], floor ["mod"], floor ["rand"])
+        self.basetime = basetime
+        self.floortime = floor
+        self.ceilingtime = ceiling
 
-        self.activation_time_lcl = base_t
-        if floor_t:
-            if base_t < floor_t:
-                self.activation_time_lcl = floor_t
-        elif ceil_t:
-            if base_t > ceil_t:
-                self.activation_time_lcl = ceil_t
+        self.update_activation_time (time_now())
+
         pass
 
+    def clone(self):
+        act_time_ = ActivationTime (self.basetime, self.floortime, self.ceilingtime)
+        act_time_.last_activation_time = self.last_activation_time
+        return act_time_
 
-    def convert_to_local_time(self, basetime, modifier, rand):
-        now = time_now()
+    def update_activation_time(self, timenow):
+        update_activation_time = False
+        update_time = self.last_activation_time + datetime.timedelta(days=1)
+        if update_time < timenow:
+            update_activation_time = True
+            self.last_activation_time = timenow#
+
+        if update_activation_time:
+            base_t = self.convert_to_local_time(self.basetime, timenow)
+            ceil_t = 0
+            floor_t = 0
+            if self.ceilingtime is not None:
+                ceil_t = self.convert_to_local_time(self.ceilingtime, timenow)
+            if self.floortime is not None:
+                floor_t = self.convert_to_local_time(self.floortime, timenow)
+
+            self.activation_time_lcl = base_t
+            if floor_t:
+                if base_t < floor_t:
+                    self.activation_time_lcl = floor_t
+            elif ceil_t:
+                if base_t > ceil_t:
+                    self.activation_time_lcl = ceil_t
+
+        return self.activation_time_lcl
+
+    def convert_to_local_time(self, time_dict, timenow):
         sun = get_sun()
 
+        basetime = time_dict  ["base"]
+        modifier = time_dict  ["mod"]
+        rand = time_dict  ["rand"]
+
         if basetime.strip() == SUNSET_STR:
-            ss_time = sun.getSunsetTime(date=now)
+            ss_time = sun.getSunsetTime(date=timenow)
             hours = ss_time['dt'].hour
             minutes = ss_time['dt'].minute
-            self.basetime = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         elif basetime.strip() == SUNRISE_STR:
-            ss_time = sun.getSunriseTime(date=now)
+            ss_time = sun.getSunriseTime(date=timenow)
             hours = ss_time['dt'].hour
             minutes = ss_time['dt'].minute
-            self.basetime = now.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         else:
             (parse_ok, hours,mins) = ParseSimpleTime(basetime,enforce_strict=True)
             if parse_ok:
-                self.basetime = now.replace(hour=hours, minute=mins, second=0, microsecond=0)
+                self.basetime = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
 #                self.basetime = datetime.timedelta(0, minutes=mins, hours=hours)
             else:
                 return None

@@ -133,11 +133,25 @@ class OverrideStatus(object):
 class SocketStatus(object):
     def __init__(self, name, state=STATE_NOT_ASSIGNED, auto_sts=PowerStatus.PWR_OFF, ovr_sts=OverrideStatus.OVR_INACTIVE, ovr_sess_state=STATE_NOT_ASSIGNED, ovr_t_until=None):
         self.name = name
+        self.actual_pwr = PowerStatus.PWR_OFF
         self.last_pwr_state = state
         self.last_auto_sts = auto_sts
         self.ovr_sts = ovr_sts
         self.ovr_session_state = ovr_sess_state
         self.ovr_t_until = ovr_t_until
+        self.history = dict()
+        self.history ["pwr"] = dict()
+        self.history ["ovr"] = dict()
+        self.history ["man"] = dict()
+
+    def clone(self):
+        skt_sts_ = SocketStatus (self.name,
+                                self.last_pwr_state,
+                                self.last_auto_sts,
+                                self.ovr_sts,
+                                self.ovr_session_state,
+                                self.ovr_t_until)
+        return skt_sts_
 
     @staticmethod
     def parse_socket_status (skt_name, status_txt):
@@ -149,15 +163,15 @@ class SocketStatus(object):
         for line in status_txt:
             line_parts = line.split()
             if line_parts[0].strip() == 'state':
-                last_pwr_state = line_parts[1].strip()
+                last_pwr_state = int(line_parts[1].strip())
             elif line_parts[0].strip() == 'auto-status':
                 auto_status = PowerStatus.ParsePwrSts(line_parts[1].strip())
             elif line_parts[0].strip() == 'override-status':
-                override_status = OverrideStatus.ParseOvrSts(line_parts[1].strip())
+                override_status = int(OverrideStatus.ParseOvrSts(line_parts[1].strip()))
             elif line_parts[0].strip() == 'override-t-until':
                 ovr_t_until = getDateAndTime(line_parts[1].strip())
             elif line_parts[0].strip() == 'override-session-state':
-                override_session_state = line_parts[1].strip()
+                override_session_state = int(line_parts[1].strip())
         skt = SocketStatus(skt_name, last_pwr_state, auto_status, override_status, override_session_state, ovr_t_until)
         return skt
 
@@ -168,6 +182,13 @@ class SocketStatus(object):
 class Status(object):
     def __init__(self):
         self.sockets = {}
+
+    def clone(self):
+        sts_ = Status()
+        for _skt_name, skt in self.sockets.items():
+            sts_.add_socket(skt.clone())
+
+        return sts_
 
     def add_socket (self, new_socket):
         self.sockets[new_socket.name] = new_socket

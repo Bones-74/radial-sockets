@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
+import datetime
 
+from print_utils import print_day
 
 web_svr = Flask(__name__)
 
@@ -66,6 +68,31 @@ def override_cmd():
 
 
     return redirect(url_for('index'))
+
+@web_svr.route('/socket_info/<string:socket_name>',methods = ['GET'])
+def socket_info(socket_name):
+#    if request.method == 'POST':
+#        _ovr = request.form['nm']
+
+
+    global relay_config
+    global relay_status
+    global relay_func
+    cfg_clone = relay_config.clone()
+    sts_clone = relay_status.clone ()
+    pdate = datetime.datetime.now()
+    on_map,ovr_map = print_day(relay_func, pdate, cfg_clone, sts_clone, socket_name)
+
+    titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
+    return render_template('socket_info.html',
+                           socket_name=socket_name,
+                           control=relay_control,
+                           config=cfg_clone,
+                           titles = titles,
+                           sockets=sts_clone.sockets,
+                           ovrs=OverrideStatus.GetOvrs(),
+                           pwr_map=on_map,
+                           ovr_map=ovr_map)
 
 def webserver_set_config_status (control, config, status, func):
     global relay_control

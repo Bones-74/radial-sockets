@@ -5,7 +5,7 @@ import threading
 
 from config import Config, App
 from status import OverrideStatus, SocketStatus, PowerStatus, Status
-from time_utils import time_now, getDateAndTime, get_sun, set_location_coords
+from time_utils import time_now, getDateAndTime, get_sun, set_location_coords, activate_test_time, deactivate_test_time
 from control import Control
 #from time import sleep
 from webserver.webserver_01 import web_svr, webserver_set_config_status
@@ -160,13 +160,19 @@ def process_overrides(config, status, overrides):
     if OverrideStatus.OVR_OFF_UNTIL_STR in overrides and overrides[OverrideStatus.OVR_OFF_UNTIL_STR]:
         process_override_off_until(status, overrides[OverrideStatus.OVR_OFF_UNTIL_STR])
 
+def check_and_store_override(socket, new_ovr):
+    if socket.ovr_sts != new_ovr:
+        # Log the change:
+        ovr_history = socket.history["ovr"]
+        ovr_history [time_now()] = new_ovr
+        socket.ovr_sts = new_ovr
 
 def process_override_off(status, ovr_off):
     for socket_name in ovr_off:
         if socket_name in status.sockets:
             socket = status.sockets[socket_name]
             socket.ovr_session_state = -1
-            socket.ovr_sts = OverrideStatus.OVR_INACTIVE
+            check_and_store_override(socket, OverrideStatus.OVR_INACTIVE)
         else:
             print ("Cannot find socket {}".format(socket_name))
 
@@ -176,7 +182,7 @@ def process_override_session_on(status, ovr_sess_on):
         if socket_name in status.sockets:
             socket = status.sockets[socket_name]
             socket.ovr_session_state = socket.calcd_state
-            socket.ovr_sts = OverrideStatus.OVR_SESSION_ON
+            check_and_store_override(socket, OverrideStatus.OVR_SESSION_ON)
         else:
             print ("Cannot find socket {}".format(socket_name))
 
@@ -186,7 +192,7 @@ def process_override_session_off(status, ovr_sess_off):
         if socket_name in status.sockets:
             socket = status.sockets[socket_name]
             socket.ovr_session_state = socket.calcd_state
-            socket.ovr_sts = OverrideStatus.OVR_SESSION_OFF
+            check_and_store_override(socket, OverrideStatus.OVR_SESSION_OFF)
         else:
             print ("Cannot find socket {}".format(socket_name))
 
@@ -196,7 +202,7 @@ def process_override_force_on(status, ovr_force_on):
         if socket_name in status.sockets:
             socket = status.sockets[socket_name]
             socket.ovr_session_state = -1
-            socket.ovr_sts = OverrideStatus.OVR_FORCE_ON
+            check_and_store_override(socket, OverrideStatus.OVR_FORCE_ON)
         else:
             print ("Cannot find socket {}".format(socket_name))
 
@@ -206,7 +212,7 @@ def process_override_force_off(status, ovr_force_off):
         if socket_name in status.sockets:
             socket = status.sockets[socket_name]
             socket.ovr_session_state = -1
-            socket.ovr_sts = OverrideStatus.OVR_FORCE_OFF
+            check_and_store_override(socket, OverrideStatus.OVR_FORCE_OFF)
         else:
             print ("Cannot find socket {}".format(socket_name))
 
@@ -217,7 +223,7 @@ def process_override_on_until(status, ovr_on_until):
         if txt in status.sockets:
             socket = status.sockets[txt]
             socket.ovr_session_state = -1
-            socket.ovr_sts = OverrideStatus.OVR_ON_UNTIL
+            check_and_store_override(socket, OverrideStatus.OVR_ON_UNTIL)
             socket.ovr_t_until = ovr_t_until
         else:
             ovr_t_until = getDateAndTime(txt)
@@ -232,7 +238,7 @@ def process_override_off_until(status, ovr_off_until):
             #MJA:TODO: need to check the time somewhere (maybe not here  and see if the  ocverrdie is valid or not...
             socket = status.sockets[txt]
             socket.ovr_session_state = -1
-            socket.ovr_sts = OverrideStatus.OVR_OFF_UNTIL
+            check_and_store_override(socket, OverrideStatus.OVR_OFF_UNTIL)
             socket.ovr_t_until = ovr_t_until
         else:
             ovr_t_until = getDateAndTime(txt)
@@ -240,7 +246,7 @@ def process_override_off_until(status, ovr_off_until):
                 print ("Cannot find socket {}".format(txt))
 
 
-def calculate_next_auto_statuses(config, status):
+def calculate_next_auto_statuses(control, config, status):
     # calculate the correct auto-statuses
     for socket_name, socket in config.sockets.items():
         if socket_name not in status.sockets:
@@ -249,13 +255,14 @@ def calculate_next_auto_statuses(config, status):
 
         skt_sts = status.sockets[socket_name]
 
-        socket.calc_status(skt_sts)
+        socket.calc_status(skt_sts, control.time)
 
 
-def send_next_statuses (config, status):
+def send_next_statuses (control, config, status):
     # send calculated power statuses to the board- just write the new
     # value to the board- if it's different it'll change and if the
     # same, well, nothing will happen
+    timenow = time_now()
     for socket_name, socket in config.sockets.items():
         skt_sts = status.sockets[socket_name]
 
@@ -288,7 +295,6 @@ def send_next_statuses (config, status):
             new_pwr_status = PowerStatus.PWR_ON
 
         elif skt_sts.ovr_sts == OverrideStatus.OVR_ON_UNTIL:
-            timenow = time_now()
             if timenow < skt_sts.ovr_t_until:
                 new_pwr_status = PowerStatus.PWR_ON
             else:
@@ -297,7 +303,6 @@ def send_next_statuses (config, status):
                 skt_sts.ovr_t_until = None
 
         elif skt_sts.ovr_sts == OverrideStatus.OVR_OFF_UNTIL:
-            timenow = time_now()
             if timenow < skt_sts.ovr_t_until:
                 new_pwr_status = PowerStatus.PWR_OFF
             else:
@@ -306,42 +311,57 @@ def send_next_statuses (config, status):
                 skt_sts.ovr_t_until = None
 
 
-        skt_sts.actual_pwr = new_pwr_status
-        board = config.boards[socket.board]
-        board.set_relay_state(new_pwr_status, socket.channel)
+        if skt_sts.actual_pwr != new_pwr_status:
+            pwr_history = skt_sts.history["pwr"]
+            pwr_history[timenow] = new_pwr_status
+            skt_sts.actual_pwr = new_pwr_status
+
+        if not control.simulate_run:
+            board = config.boards[socket.board]
+            board.set_relay_state(new_pwr_status, socket.channel)
 
 
 sem = threading.Semaphore()
 def relay_process(control, config, status, overrides):
     try:
+        # grab the semaphore to gaurd shared resource
+        sem.acquire()
+        # see if this is a simulated run and activate sim_time if true
+        if control.simulate_run:
+            activate_test_time(control.time)
+
+        control.time = time_now()
+
         # fill in todays sunrise/sunset details
         sun = get_sun()
         control.sunrise = sun.getSunriseTime(time_now())
         control.sunset = sun.getSunsetTime(time_now())
 
-        # grab the semaphore to gaurd shared resource
-        sem.acquire()
-
         # read the current board statuses
-        retrieve_current_board_statuses(config)
+        if not control.simulate_run:
+            retrieve_current_board_statuses(config)
 
         # Calc the auto-values, ignoring override states
-        calculate_next_auto_statuses(config, status)
+        calculate_next_auto_statuses(control, config, status)
 
         if overrides:
             process_overrides(config, status, overrides)
 
         # Send the next set of values to the boards, taking the overrides into account
-        send_next_statuses (config, status)
+        send_next_statuses (control, config, status)
 
         # re-write the status file
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        full_path = dir_path + '/' + ".relay-sts"
-        status.write_file (full_path)
+        if control.simulate_run:
+            deactivate_test_time()
+        else:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            full_path = dir_path + '/' + ".relay-sts"
+            status.write_file (full_path)
 
+    except:
+        return relay_exit_codes.EXIT_CODE_PROCESSING_RELAY_ERROR
     finally:
         sem.release()
-        return relay_exit_codes.EXIT_CODE_PROCESSING_RELAY_ERROR
 
     return relay_exit_codes.EXIT_CODE_OK
 
@@ -416,7 +436,7 @@ def validate_args(new_ovrrides, config):
     return relay_exit_codes.EXIT_CODE_OK, None
 
 
-def main__run_from_commandline(args=None,debug_in=None):
+def main__1st_run_from_commandline(args=None,debug_in=None):
     args = process_args(args=args)
 
     # Either read input files, or use the debug_in which should contain config/status in array of strings
@@ -508,5 +528,5 @@ def main__run_from_scheduler(control, config, status):
 
 
 if __name__ == "__main__":
-    err_code = main__run_from_commandline(args=sys.argv[1:])
+    err_code = main__1st_run_from_commandline(args=sys.argv[1:])
     print ("exit({})".format(err_code))
