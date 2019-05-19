@@ -1,8 +1,8 @@
 hall03
 {
-  state 3
+  state 1
   # [on/off]
-  auto-status  on
+  auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
@@ -13,9 +13,9 @@ hall03
 
 hall02
 {
-  state 3
+  state 1
   # [on/off]
-  auto-status  on
+  auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
@@ -26,9 +26,9 @@ hall02
 
 hall01
 {
-  state 2
+  state 1
   # [on/off]
-  auto-status  on
+  auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]

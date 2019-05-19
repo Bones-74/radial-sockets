@@ -148,7 +148,7 @@ class Socket(object):
     SKT_MISSING_TXT = "**missing**"
     SKT_MISSING_INT = -1
 
-    def __init__(self, name, board, channel, sense):
+    def __init__(self, name, board, channel, sense=Monitor.ACTIVE_HIGH):
         self.name = name
         self.board = board
         self.channel = channel

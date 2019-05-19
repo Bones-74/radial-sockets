@@ -247,83 +247,84 @@ def process_override_off_until(status, ovr_off_until):
                 print ("Cannot find socket {}".format(txt))
 
 
-def calculate_next_auto_statuses(control, config, status):
-    # calculate the correct auto-statuses
-    for socket_name, socket in config.sockets.items():
-        if socket_name not in status.sockets:
-            new_skt_status = SocketStatus(socket_name, 0, PowerStatus.PWR_OFF, OverrideStatus.OVR_INACTIVE)
-            status.sockets[socket_name] = new_skt_status
+#def calculate_next_auto_statuses(control, config, status):
+#    # calculate the correct auto-statuses
+#    for socket_name, socket in config.sockets.items():
+#        if socket_name not in status.sockets:
+#            new_skt_status = SocketStatus(socket_name, 0, PowerStatus.PWR_OFF, OverrideStatus.OVR_INACTIVE)
+#            status.sockets[socket_name] = new_skt_status
+#
+#        skt_sts = status.sockets[socket_name]
+#
+#        socket.calc_status(skt_sts, control.time)
 
-        skt_sts = status.sockets[socket_name]
 
-        socket.calc_status(skt_sts, control.time)
-
-
-def send_next_statuses (control, config, status):
+def send_next_statuses (control, socket_cfg, socket_sts, board):
     # send calculated power statuses to the board- just write the new
     # value to the board- if it's different it'll change and if the
     # same, well, nothing will happen
-    timenow = time_now()
-    for socket_name, socket in config.sockets.items():
-        skt_sts = status.sockets[socket_name]
+    timenow = control.time
+#    for socket_name, socket in config.sockets.items():
+    if True:
+#        skt_sts = status.sockets[socket_name]
 
         # If there is an override, then adjust the new_pwr_status accordingly
-        if skt_sts.ovr_sts == OverrideStatus.OVR_INACTIVE:
-            new_pwr_status = skt_sts.calcd_auto_sts
+        if socket_sts.ovr_sts == OverrideStatus.OVR_INACTIVE:
+            new_pwr_status = socket_sts.calcd_auto_sts
 
-        elif skt_sts.ovr_sts == OverrideStatus.OVR_SESSION_OFF:
-            if skt_sts.calcd_state == skt_sts.ovr_session_state:
+        elif socket_sts.ovr_sts == OverrideStatus.OVR_SESSION_OFF:
+            if socket_sts.calcd_state == socket_sts.ovr_session_state:
                 new_pwr_status = PowerStatus.PWR_OFF
             else:
                 # drop out of session override and use the calcd power state,
                 # which is normally the same as the session override
-                skt_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                new_pwr_status = skt_sts.calcd_auto_sts
+                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+                new_pwr_status = socket_sts.calcd_auto_sts
 
-        elif skt_sts.ovr_sts == OverrideStatus.OVR_SESSION_ON:
-            if skt_sts.calcd_state == skt_sts.ovr_session_state:
+        elif socket_sts.ovr_sts == OverrideStatus.OVR_SESSION_ON:
+            if socket_sts.calcd_state == socket_sts.ovr_session_state:
                 new_pwr_status = PowerStatus.PWR_ON
             else:
                 # drop out of session override and use the calcd power state,
                 # which is normally the same as the session override
-                skt_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                new_pwr_status = skt_sts.calcd_auto_sts
+                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+                new_pwr_status = socket_sts.calcd_auto_sts
 
-        elif skt_sts.ovr_sts == OverrideStatus.OVR_FORCE_OFF:
+        elif socket_sts.ovr_sts == OverrideStatus.OVR_FORCE_OFF:
             new_pwr_status = PowerStatus.PWR_OFF
 
-        elif skt_sts.ovr_sts == OverrideStatus.OVR_FORCE_ON:
+        elif socket_sts.ovr_sts == OverrideStatus.OVR_FORCE_ON:
             new_pwr_status = PowerStatus.PWR_ON
 
-        elif skt_sts.ovr_sts == OverrideStatus.OVR_ON_UNTIL:
-            if timenow < skt_sts.ovr_t_until:
+        elif socket_sts.ovr_sts == OverrideStatus.OVR_ON_UNTIL:
+            if timenow < socket_sts.ovr_t_until:
                 new_pwr_status = PowerStatus.PWR_ON
             else:
-                new_pwr_status = skt_sts.calcd_auto_sts
-                skt_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                skt_sts.ovr_t_until = None
+                new_pwr_status = socket_sts.calcd_auto_sts
+                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+                socket_sts.ovr_t_until = None
 
-        elif skt_sts.ovr_sts == OverrideStatus.OVR_OFF_UNTIL:
-            if timenow < skt_sts.ovr_t_until:
+        elif socket_sts.ovr_sts == OverrideStatus.OVR_OFF_UNTIL:
+            if timenow < socket_sts.ovr_t_until:
                 new_pwr_status = PowerStatus.PWR_OFF
             else:
-                new_pwr_status = skt_sts.calcd_auto_sts
-                skt_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                skt_sts.ovr_t_until = None
+                new_pwr_status = socket_sts.calcd_auto_sts
+                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+                socket_sts.ovr_t_until = None
 
 
-        if skt_sts.actual_pwr != new_pwr_status:
-            pwr_history = skt_sts.history["pwr"]
+        if socket_sts.actual_pwr != new_pwr_status:
+            pwr_history = socket_sts.history["pwr"]
             pwr_history[timenow] = new_pwr_status
-            skt_sts.actual_pwr = new_pwr_status
+            socket_sts.actual_pwr = new_pwr_status
 
         if not control.simulate_run:
-            board = config.boards[socket.board]
-            board.set_relay_state(new_pwr_status, socket.channel)
+#            board = config.boards[socket.board]
+            board.set_relay_state(new_pwr_status, socket_cfg.channel)
 
 
 sem = threading.Semaphore()
-def relay_process(control, config, status, overrides):
+def relay_process(control, config, status, overrides, socket_name=None):
     try:
         # grab the semaphore to gaurd shared resource
         sem.acquire()
@@ -335,21 +336,41 @@ def relay_process(control, config, status, overrides):
 
         # fill in todays sunrise/sunset details
         sun = get_sun()
-        control.sunrise = sun.getSunriseTime(time_now())
-        control.sunset = sun.getSunsetTime(time_now())
+        control.sunrise = sun.getSunriseTime(control.time)
+        control.sunset = sun.getSunsetTime(control.time)
 
         # read the current board statuses
         if not control.simulate_run:
             retrieve_current_board_statuses(config)
 
-        # Calc the auto-values, ignoring override states
-        calculate_next_auto_statuses(control, config, status)
-
+        # process the overrides passed in.
         if overrides:
             process_overrides(config, status, overrides)
 
-        # Send the next set of values to the boards, taking the overrides into account
-        send_next_statuses (control, config, status)
+        # run on all sockets or just one?
+        if socket_name != None:
+            if socket_name not in config.sockets:
+                return relay_exit_codes.EXIT_CODE_CMDLINE_ERROR_UNRECOGNISED_SOCKET
+            if socket_name not in status.sockets:
+                return relay_exit_codes.EXIT_CODE_CMDLINE_ERROR_UNRECOGNISED_SOCKET
+            socket_cfg = config.sockets[socket_name]
+            socket_sts = status.sockets[socket_name]
+            # Calc the auto-values, ignoring override states
+            socket_cfg.calc_status(socket_sts, control.time)
+            # Send the next set of values to the boards, taking the overrides into account
+            send_next_statuses (control, socket_cfg, socket_sts, config.boards[socket_cfg.board])
+        else:
+            # iterate through all sockets
+            for socket_name, socket_cfg in config.sockets.items():
+                if socket_name not in status.sockets:
+                    # create a socket-status instance....
+                    new_skt_status = SocketStatus(socket_name, 0, PowerStatus.PWR_OFF, OverrideStatus.OVR_INACTIVE)
+                    status.sockets[socket_name] = new_skt_status
+                socket_sts = status.sockets[socket_name]
+                # Calc the auto-values, ignoring override states
+                socket_cfg.calc_status(socket_sts, control.time)
+                send_next_statuses (control, socket_cfg, socket_sts, config.boards[socket_cfg.board])
+
 
         # re-write the status file
         if control.simulate_run:

@@ -17,89 +17,7 @@
             <th> {{ title }} </th>
          {% endfor %}
          </tr>
-         {% for key, socket in sockets.items() %}
-            {% set ovr_sts = [0] %}
-            <tr>
-            {% for title in titles %}
-               {% if title == "name" %}
-                  <td><a href="http://localhost:30080/socket_info/{{ key }}">{{ key }} </a></td>
-               {% elif title == "switch-mode" %}
-                  <td
-                  {% if not socket.sts_auto_on %}
-                     color="#FF0000"
-                  {% endif %}
-                  >
-                  {% if socket.sts_ovr_on %}
-                     Manual-ON
-                  {% elif socket.sts_auto_on %}
-                     PC-control
-                  {% else %}
-                     Manual-off
-                  {% endif %}
-                  </td>
-               {% elif title == "socket pwr" %}
-                  <td
-                  {% if socket.sts_ovr_on %}
-                     bgcolor="#FF0000">
-                     ON </td>
-                  {% elif socket.sts_auto_on %}
-                     {% if socket["actual_pwr"] == 0 %}
-                        color="#0000FF">
-                        off </td>
-                     {% else %}
-                        bgcolor="#FF00FF">
-                        ON </td>
-                     {% endif %}
-                  {% else %}
-                     style="color: red;">
-                     off </td>
-                  {% endif %}
-               {% elif title == "auto control" %}
-                  <td
-                  {% if socket["ovr_sts"] != 0 %}
-                      style="color: red;">
-                  {% else %}
-                    >
-                  {% endif %}
-                  {% if socket["actual_pwr"] == 0 %}
-                     off </td>
-                  {% else %}
-                     ON </td>
-                  {% endif %}</td>
-               {% elif title == "auto ovr" %}
-                  {% set x = ovr_sts.pop() %}
-                  {% if ovr_sts.append(socket["ovr_sts"]) %}{% endif %}
-                  <td>
-                  <form action = "http://localhost:30080/override_cmd" method = "post">
-                  <input type="hidden" name='skt_id' value={{key}} />
-                  <input type="hidden" name='source' value='index' />
-                  <select name='ovr_sel' onchange='this.form.submit()' autocomplete="off">
-                  <!--
-                   OVR_INACTIVE    = 0
-                   OVR_SESSION_ON  = 1
-                   OVR_SESSION_OFF = 2
-                   OVR_FORCE_ON    = 3
-                   OVR_FORCE_OFF   = 4
-                   OVR_ON_UNTIL    = 5
-                   OVR_OFF_UNTIL   = 6
-                  -->
-                  {% for ovr_id,ovr_str in ovrs.items() %}
-                     {% if ovr_sts[0] == ovr_id %}
-                         <option selected>{{ovr_str}}</option>
-                     {% else %}
-                         <option>{{ovr_str}}</option>
-                     {% endif %}
-                  {% endfor %}
-                  </select>
-                  <noscript><input type="submit" value="Submit"></noscript>
-                  </form>
-                  </td>
-               {% else %}
-                  <td>**ERROR**<td/>
-               {% endif %}
-            {% endfor %}
-            </tr>
-         {% endfor %}
+         {{ table_rows|safe }}
       </table>
 
    </body>
@@ -107,4 +25,4 @@
 </html>
   
   
-  
+  table_rows

@@ -61,19 +61,21 @@ class ActivationTime(object):
             ss_time = sun.getSunsetTime(date=timenow)
             hours = ss_time['dt'].hour
             minutes = ss_time['dt'].minute
-            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+            basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+#            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         elif basetime.strip() == SUNRISE_STR:
             ss_time = sun.getSunriseTime(date=timenow)
             hours = ss_time['dt'].hour
             minutes = ss_time['dt'].minute
-            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+            basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
+#            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         else:
             (parse_ok, hours,mins) = ParseSimpleTime(basetime,enforce_strict=True)
             if parse_ok:
-                self.basetime = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
-#                self.basetime = datetime.timedelta(0, minutes=mins, hours=hours)
+                basetime_lcl = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
+#                self.basetime = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
             else:
                 return None
         isNegative = False
@@ -101,9 +103,9 @@ class ActivationTime(object):
 
         time_lcl = 0
         if isNegative:
-            time_lcl = self.basetime - self.modifier
+            time_lcl = basetime_lcl - self.modifier
         else:
-            time_lcl = self.basetime + self.modifier
+            time_lcl = basetime_lcl + self.modifier
 
         return time_lcl
 

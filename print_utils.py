@@ -26,54 +26,46 @@ def print_days(relay_process, start_date, end_date, config, status, socket_name,
         if d1 > 10:
             d1 = 0
             d10 += 1
-            
+
         days.append(day_str)
         #print("{}: {}".format (d.strftime('%Y.%m.%d'), day_str))
-
+    return days
 
 def print_day(relay_process, date, config, status, socket_name, step=10):
     ON_CHAR = "X"
     OFF_CHAR = "-"
     OVR_CHAR = "O"
 
-    #board_name = "sim"
-    #relay_channel_idx = 0
-    #skt = Socket(socket_name, board_name, relay_channel_idx)
     overrides = {}
-    # add sim board to config
-    #config.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
-    # ----------------------test-setup-end-----------------------
-    #step = 10
-    day_str = ""
+    day_list = []
     ovr_str = ""
     control = Control()
     control.simulate_run = True
     for hour in range (24):
-#        calc_and_activate_test_time(hour, 0, basedate=date)
-        if hour == 1:
-            pass
-        #states = SocketState.parse_states(self.states_text)
-        #skt.add_states(states)
-        #config.add_socket(skt)
-        #relay_ch = config.sockets[socket_name].channel
-
-        for minute in range (0, 60, step):
+    #for hour in range (10,11):
+        for minute in range (00, 60, step):
+            import datetime
+            if date == datetime.datetime.now().date():
+                if hour == 10:
+                    if minute == 10:
+                        pass
             ttime = calc_and_activate_test_time(hour,minute,basedate=date)
             control.time = ttime
-            ret_code = relay_process(control, config, status, overrides)
+            ret_code = relay_process(control, config, status, overrides, socket_name)
             if ret_code:
                 exit(ret_code)
             skt_status = status.sockets[socket_name]
             if skt_status.actual_pwr == PowerStatus.PWR_OFF:
-                day_str += OFF_CHAR
+                day_list.append(OFF_CHAR)
             else:
-                day_str += ON_CHAR
-            if skt_status.ovr_sts == OverrideStatus.OVR_INACTIVE:
-                ovr_str += OFF_CHAR
-            else:
-                ovr_str += OVR_CHAR
+                day_list.append(ON_CHAR)
+            #if skt_status.ovr_sts == OverrideStatus.OVR_INACTIVE:
+            #    ovr_str += OFF_CHAR
+            #else:
+            #    ovr_str += OVR_CHAR
 
+    day_str = ''.join(day_list)
     return day_str, ovr_str
 
 
