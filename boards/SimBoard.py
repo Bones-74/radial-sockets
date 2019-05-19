@@ -8,6 +8,9 @@ class SimBoard(BoardInterface):
 
         self.channels = [0] * num_channels
 
+    def addChannel(self, channel, sense, direction):
+        return BoardInterface.ALL_OK
+
     def getCurrentStatus (self):
         # pretend to get real info from relay board, ie, do nothing!
         return self.channels

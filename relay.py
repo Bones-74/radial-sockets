@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import threading
+import time
 
 from config import Config, App
 from status import OverrideStatus, SocketStatus, PowerStatus, Status
@@ -484,13 +485,19 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
     # now take the info read from the config and status files and process the info
     control = Control()
     set_location_coords (config.app.coords)
-    err_code = relay_process(control, config, status, new_overrides)
+    ret_code = relay_process(control, config, status, new_overrides)
+    if ret_code:
+        return ret_code
 
     # re-write the status file
     if status_file:
         dir_path = os.path.dirname(os.path.realpath(__file__))
         full_path = dir_path + '/' + status_file
         status.write_file (full_path)
+
+    # configure & start thread to monitor board inputs
+    thread = threading.Thread(target=update_board_inputs,args=(config, status))
+    thread.start()
 
     # Now see if we want to run the app continously
     if config.app:
@@ -513,18 +520,39 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
             thread = threading.Thread(target=main__run_from_scheduler,args=(control, config, status))
             thread.start()
 
-    return err_code
+    return relay_exit_codes.EXIT_CODE_OK
 
 def main__run_from_scheduler(control, config, status):
     while not control.exit_now:
         control.run_event.wait()
 
         # now take the info read from the config and status files and process the info
-        err_code = relay_process(control, config, status, None)
+        ret_code = relay_process(control, config, status, None)
+        if ret_code:
+            exit(ret_code)
 
         control.run_event.clear()
 
     return err_code
+
+def update_board_inputs(config, status):
+    while True:
+        for _board_name, board in config.boards.items():
+            board.update_live_status()
+
+        for skt_name, skt in config.sockets.items():
+            if skt.mon_ovr_on:
+                # test the channel to see if this is set
+                board = config.boards[skt.mon_ovr_on.board]
+                active = board.get_relay_state(skt.mon_ovr_on.channel)
+                status.sockets[skt_name].sts_ovr_on = active
+            if skt.mon_auto_on:
+                # test the channel to see if this is set
+                board = config.boards[skt.mon_auto_on.board]
+                active = board.get_relay_state(skt.mon_auto_on.channel)
+                status.sockets[skt_name].sts_auto_on = active
+
+        time.sleep(2)
 
 
 if __name__ == "__main__":

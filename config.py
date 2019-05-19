@@ -1,10 +1,12 @@
+import threading
+import time
 
 from status import PowerStatus
 from boards.ft232h import ada_ft232h
 from boards.b01 import B01
 from boards.SimBoard import SimBoard
-from time_utils import time_now
 from activation_time import ActivationTime
+from boards import board_interface
 
 
 class config_kw():
@@ -24,6 +26,11 @@ class config_kw():
     SOCKET_NAME_KW = 'name'
     SOCKET_BOARD_KW = 'board'
     SOCKET_CHANNEL_KW = 'channel'
+    SOCKET_MONITOR_OVR_ON_KW = 'monitor_hw_ovr_on'
+    SOCKET_MONITOR_PWR_KW = 'monitor_socket'
+    SOCKET_SENSE_KW = "sense"
+    SOCKET_SENSE_ACTIVE_LOW_KW = "active-low"
+    SOCKET_SENSE_ACTIVE_HIGH_KW = "active-high"
 
     STATES_KW = 'states'
 
@@ -79,15 +86,24 @@ class Board(object):
         self.board_comms = None
         self.current_status = []
 
-        if self.model == B01.ModelName():
-            self.board_comms = B01(bname, bport, num_channels)
-        elif self.model == ada_ft232h.ModelName():
-            self.board_comms = ada_ft232h(bname, bport, num_channels)
-        elif self.model == SimBoard.ModelName():
-            self.board_comms = SimBoard(bname, bport, num_channels)
+        try:
+            if self.model == B01.ModelName():
+                self.board_comms = B01(bname, bport, num_channels)
+            elif self.model == ada_ft232h.ModelName():
+                self.board_comms = ada_ft232h(bname, bport, num_channels)
+            elif self.model == SimBoard.ModelName():
+                self.board_comms = SimBoard(bname, bport, num_channels)
 
-        else:
+            else:
+                pass
+        except RuntimeError:
             pass
+
+    def add_channel(self,channel, sense, direction):
+        return self.board_comms.addChannel(channel, sense, direction)
+
+    def init (self):
+        self.board_comms.configure()
 
     @staticmethod
     def parse_board (board_def):
@@ -118,14 +134,27 @@ class Board(object):
         return self.board_comms.setRelay(new_status, relay_idx)
 
 
+class Monitor(object):
+    ACTIVE_LOW = 0
+    ACTIVE_HIGH = 0
+
+    def __init__(self):
+        self.board = ""
+        self.channel = -1
+        self.sense = Monitor.ACTIVE_LOW
+
+
 class Socket(object):
     SKT_MISSING_TXT = "**missing**"
     SKT_MISSING_INT = -1
 
-    def __init__(self, name, board, channel):
+    def __init__(self, name, board, channel, sense):
         self.name = name
         self.board = board
         self.channel = channel
+        self.sense = sense
+        self.mon_ovr_on = {}
+        self.mon_auto_on = {}
 
         #self.current_state = STATE_NOT_ASSIGNED
         #self.current_pwr_state = STATE_NOT_ASSIGNED
@@ -135,6 +164,7 @@ class Socket(object):
         skt_name = Socket.SKT_MISSING_TXT
         skt_board = Socket.SKT_MISSING_TXT
         skt_channel = Socket.SKT_MISSING_INT
+        skt_sense = Socket.SKT_MISSING_INT
         for line in state_def:
             line_parts = line.split()
             if line_parts[0].strip() == config_kw.SOCKET_NAME_KW:
@@ -143,11 +173,53 @@ class Socket(object):
                 skt_board = line_parts[1].strip()
             elif line_parts[0].strip() == config_kw.SOCKET_CHANNEL_KW:
                 skt_channel = int(line_parts[1].strip())
-        skt = Socket(skt_name, skt_board, skt_channel)
+            elif line_parts[0].strip() == config_kw.SOCKET_SENSE_KW:
+                if line_parts[1].strip() == config_kw.SOCKET_SENSE_ACTIVE_LOW_KW:
+                    skt_sense = Monitor.ACTIVE_LOW
+                else:
+                    skt_sense = Monitor.ACTIVE_HIGH
+
+        skt = Socket(skt_name, skt_board, skt_channel, skt_sense)
         return skt
 
     def add_states (self, states):
         self.states = states
+
+    def add_monitors(self, monitor_skts, monitor_ovr_on):
+        self.mon_ovr_on = monitor_ovr_on
+        self.mon_auto_on = monitor_skts
+
+    @staticmethod
+    def parse_monitor_skt(mon_skt_txt):
+        monitor = Socket.parse_monitor (mon_skt_txt)
+        return monitor
+
+    @staticmethod
+    def parse_monitor (mon_txt):
+        mon_board = Socket.SKT_MISSING_TXT
+        mon_channel = Socket.SKT_MISSING_INT
+        mon_sense = Socket.SKT_MISSING_INT
+        monitor = Monitor()
+        for line in mon_txt:
+            line_parts = line.split()
+            if line_parts[0].strip() == config_kw.SOCKET_BOARD_KW:
+                mon_board = line_parts[1].strip()
+                monitor.board = mon_board
+            elif line_parts[0].strip() == config_kw.SOCKET_CHANNEL_KW:
+                mon_channel = int(line_parts[1].strip())
+                monitor.channel = mon_channel
+            elif line_parts[0].strip() == config_kw.SOCKET_SENSE_KW:
+                if line_parts[1].strip() == config_kw.SOCKET_SENSE_ACTIVE_LOW_KW:
+                    mon_sense = Monitor.ACTIVE_LOW
+                else:
+                    mon_sense = Monitor.ACTIVE_HIGH
+                monitor.sense = mon_sense
+        return monitor
+
+    @staticmethod
+    def parse_monitor_ovr_on(mon_skt_txt):
+        monitor = Socket.parse_monitor (mon_skt_txt)
+        return monitor
 
     def calc_status(self, skt_status, timenow):
         # using the current status of the socket, as read from the status file,
@@ -168,7 +240,7 @@ class Socket(object):
         skt_status.calcd_auto_sts = next_state.power_state
 
     def clone (self):
-        skt_ = Socket (self.name, self.board, self.channel)
+        skt_ = Socket (self.name, self.board, self.channel, self.sense)
         states_ = []
         for skt_state in self.states:
             states_.append(skt_state.clone())
@@ -252,12 +324,30 @@ class Config(object):
     CONFIG_ERROR_SOCKET_STATE_PWR_INVALID = 11
     CONFIG_ERROR_SOCKET_STATE_BADLY_DEFINED = 12
     CONFIG_ERROR_SOCKET_STATE_ACTIVATION_TIME_INVALID = 13
+    CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED = 14
 
 
     def __init__(self):
         self.boards = {}
         self.sockets = {}
         self.app = None
+
+    def init(self):
+        for _socket_name, socket in self.sockets.items():
+            ret1 = ret2 = ret3 = 0
+            ret1 = self.boards[socket.board].add_channel(socket.channel, socket.sense, board_interface.BoardInterface.CHANNEL_OUTPUT)
+            if socket.mon_ovr_on:
+                ret2 = self.boards[socket.mon_ovr_on.board].add_channel(socket.mon_ovr_on.channel, socket.mon_ovr_on.sense, board_interface.BoardInterface.CHANNEL_INPUT)
+            if socket.mon_auto_on:
+                ret3 = self.boards[socket.mon_auto_on.board].add_channel(socket.mon_auto_on.channel, socket.mon_auto_on.sense, board_interface.BoardInterface.CHANNEL_INPUT)
+
+            if ret1 or ret2 or ret3:
+                return self.CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED
+
+        for _board_name, board in self.boards.items():
+            board.init()
+
+        return self.CONFIG_OK
 
     def add_app (self, app):
         self.app = app
@@ -325,7 +415,7 @@ class Config(object):
 
     def clone (self):
         cfg_clone = Config()
-        for skt_name, skt in self.sockets.items():
+        for _skt_name, skt in self.sockets.items():
             skt_clone = skt.clone()
             cfg_clone.add_socket(skt_clone)
 
@@ -337,14 +427,20 @@ class Config(object):
         GET_BOARD = 1
         GET_SOCKET = 2
         GET_SOCKET_STATES = 3
-        GET_APP = 4
+        GET_SOCKET_MONITOR_SKT = 4
+        GET_SOCKET_MONITOR_OVR_ON_ = 5
+        GET_APP = 6
 
         config = Config()
         states = {}
+        monitor_skts = None
+        monitor_ovr_on = None
 
         app_text = []
         board_text = []
         socket_text = []
+        monitor_skts_text = []
+        monitor_ovr_on_text = []
         state = FIND_TYPE
         for line in config_arr:
             line = line.strip()
@@ -382,10 +478,19 @@ class Config(object):
                     socket = Socket.parse_socket(socket_text)
                     socket.add_states(states)
                     config.add_socket(socket)
+                    socket.add_monitors(monitor_skts, monitor_ovr_on)
+                    monitor_skts = None
+                    monitor_ovr_on = None
                     state = FIND_TYPE
                 elif line == config_kw.STATES_KW:
                     states_text = []
                     state = GET_SOCKET_STATES
+                elif line == config_kw.SOCKET_MONITOR_OVR_ON_KW:
+                    monitor_ovr_on_text = []
+                    state = GET_SOCKET_MONITOR_OVR_ON_
+                elif line == config_kw.SOCKET_MONITOR_PWR_KW:
+                    monitor_skts_text = []
+                    state = GET_SOCKET_MONITOR_SKT
                 else:
                     socket_text.append(line)
             elif state == GET_SOCKET_STATES:
@@ -396,6 +501,28 @@ class Config(object):
                     state = GET_SOCKET
                 else:
                     states_text.append(line)
+
+            #elif line_parts[0].strip() == config_kw.SOCKET_MONITOR_OVR_ON_KW:
+            # #  skt_channel = int(line_parts[1].strip())
+            #elif line_parts[0].strip() == config_kw.SOCKET_MONITOR_PWR_KW:
+            #    skt_channel = int(line_parts[1].strip())
+            elif state == GET_SOCKET_MONITOR_SKT:
+                if line == '{':
+                    pass
+                elif line == '}':
+                    monitor_skts = Socket.parse_monitor_skt(monitor_skts_text)
+                    state = GET_SOCKET
+                else:
+                    monitor_skts_text.append(line)
+            elif state == GET_SOCKET_MONITOR_OVR_ON_:
+                if line == '{':
+                    pass
+                elif line == '}':
+                    monitor_ovr_on = Socket.parse_monitor_ovr_on(monitor_ovr_on_text)
+                    state = GET_SOCKET
+                else:
+                    monitor_ovr_on_text.append(line)
+
             elif state == GET_APP:
                 if line == '{':
                     pass
@@ -405,6 +532,9 @@ class Config(object):
                     state = FIND_TYPE
                 else:
                     app_text.append(line)
+
+        if config.init():
+            exit(-15)
         return config
 
 

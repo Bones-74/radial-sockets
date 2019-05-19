@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 import datetime
 
-from print_utils import print_day
+from print_utils import print_day, print_days
 
 web_svr = Flask(__name__)
 
@@ -43,7 +43,8 @@ def index():
 
 
     global relay_status
-    titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
+    #titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
+    titles = ["name", "switch-mode", "socket pwr","auto control",  "auto ovr"]
     return render_template('table.html',
                            control=relay_control,
                            config=relay_config,
@@ -58,6 +59,7 @@ def override_cmd():
         global relay_config
         ovr_sel = request.form['ovr_sel']
         skt = request.form['skt_id']
+        source = request.form['source']
         overrides = dict()
         skt_list = [skt]
         overrides [ovr_sel] = skt_list
@@ -66,8 +68,11 @@ def override_cmd():
         global relay_func
         relay_func (relay_control, relay_config, relay_status, overrides)
 
-
-    return redirect(url_for('index'))
+    #return redirect(url_for('index'))
+    if (source == 'socket_info'):
+        return redirect(url_for(source, socket_name=skt))
+    else:
+        return redirect(url_for(source))
 
 @web_svr.route('/socket_info/<string:socket_name>',methods = ['GET'])
 def socket_info(socket_name):
@@ -79,11 +84,17 @@ def socket_info(socket_name):
     global relay_status
     global relay_func
     cfg_clone = relay_config.clone()
-    sts_clone = relay_status.clone ()
+    sts_clone = relay_status.clone()
     pdate = datetime.datetime.now()
     on_map,ovr_map = print_day(relay_func, pdate, cfg_clone, sts_clone, socket_name)
+    
+    start_date = pdate - datetime.timedelta(days = 50)
+    end_date = pdate + datetime.timedelta(days = 50)
+    full_on_map = print_days(relay_func, start_date, end_date, cfg_clone, sts_clone, socket_name)
 
-    titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
+    sts_clone = relay_status.clone()
+    #titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
+    titles = ["name", "switch-mode", "socket pwr","auto control",  "auto ovr"]
     return render_template('socket_info.html',
                            socket_name=socket_name,
                            control=relay_control,
@@ -92,7 +103,7 @@ def socket_info(socket_name):
                            sockets=sts_clone.sockets,
                            ovrs=OverrideStatus.GetOvrs(),
                            pwr_map=on_map,
-                           ovr_map=ovr_map)
+                           ovr_map=full_on_map)
 
 def webserver_set_config_status (control, config, status, func):
     global relay_control

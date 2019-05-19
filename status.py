@@ -139,6 +139,9 @@ class SocketStatus(object):
         self.ovr_sts = ovr_sts
         self.ovr_session_state = ovr_sess_state
         self.ovr_t_until = ovr_t_until
+        self.sts_ovr_on = False
+        self.sts_auto_on = False
+
         self.history = dict()
         self.history ["pwr"] = dict()
         self.history ["ovr"] = dict()
@@ -151,6 +154,11 @@ class SocketStatus(object):
                                 self.ovr_sts,
                                 self.ovr_session_state,
                                 self.ovr_t_until)
+        skt_sts_.sts_ovr_on = self.sts_ovr_on
+        skt_sts_.sts_auto_on = self.sts_auto_on
+        skt_sts_.actual_pwr = self.actual_pwr
+        skt_sts_.calcd_auto_sts = self.calcd_auto_sts
+        skt_sts_.calcd_state = self.calcd_state
         return skt_sts_
 
     @staticmethod

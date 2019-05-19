@@ -11,18 +11,24 @@
     </script>
     </head>
     <body>
-      <table border = 1>
+       
+       <table border = 1>
          <tr>
          {% for title in titles %}
             <th> {{ title }} </th>
          {% endfor %}
          </tr>
-         {% for key, socket in sockets.items() %}
+         {% set index = [0] %}
+         {% set key = socket_name %}
+         {% set socket = sockets [socket_name] %}
             {% set ovr_sts = [0] %}
             <tr>
             {% for title in titles %}
+
+
+               {% set ovr_sts = [0] %}
                {% if title == "name" %}
-                  <td><a href="http://localhost:30080/socket_info/{{ key }}">{{ key }} </a></td>
+                  <td> {{ key }} </td>
                {% elif title == "switch-mode" %}
                   <td
                   {% if not socket.sts_auto_on %}
@@ -72,7 +78,7 @@
                   <td>
                   <form action = "http://localhost:30080/override_cmd" method = "post">
                   <input type="hidden" name='skt_id' value={{key}} />
-                  <input type="hidden" name='source' value='index' />
+                  <input type="hidden" name='source' value='socket_info' />
                   <select name='ovr_sel' onchange='this.form.submit()' autocomplete="off">
                   <!--
                    OVR_INACTIVE    = 0
@@ -99,9 +105,23 @@
                {% endif %}
             {% endfor %}
             </tr>
-         {% endfor %}
+         
       </table>
 
+
+      <!-- output the states -->
+      {% set socket_cfg = config.sockets [socket_name] %}
+      <p style = "font-family:courier;font-size:16px;"><pre>     00    01    02    03    04    05    06    07    08    09    10    11    12    13    14    15    16    17    18    19    20    21    22    23</pre></p>
+      <p style = "font-family:courier;font-size:16px;"><pre>     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |</pre></p>
+      <p style = "font-family:courier;font-size:16px;"><pre>pwr: {{ pwr_map }}</pre></p>
+      <br><br><br>
+      <p style = "font-family:courier;font-size:16px;"><pre>     00    01    02    03    04    05    06    07    08    09    10    11    12    13    14    15    16    17    18    19    20    21    22    23</pre></p>
+      {% for daymap in ovr_map %}
+         <p style = "font-family:courier;font-size:16px;"><pre>pwr: {{ daymap }}</pre></p>
+      {% endfor %}
+      {% for state in socket_cfg.states %}
+      <p>{{ state.state_txt }}</p>
+      {% endfor %}
    </body>
    
 </html>
