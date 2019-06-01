@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import datetime
+import pytz
 
 from print_utils import print_day, print_days
 from config import Board
@@ -86,30 +87,34 @@ def socket_info(socket_name):
     global relay_func
     cfg_clone = relay_config.clone()
     sts_clone = relay_status.clone()
-
+    import cProfile
+    pr = cProfile.Profile()
+    pr.enable()
     board_name = cfg_clone.sockets[socket_name].board
     cfg_clone.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
-    pdate = datetime.datetime.now()
-    on_map,ovr_map = print_day(relay_func, pdate, cfg_clone, sts_clone, socket_name)
-    
+    pdate = datetime.datetime.now(pytz.utc)
+    on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
+
     start_date = pdate - datetime.timedelta(days = 50)
     end_date = pdate + datetime.timedelta(days = 50)
     #start_date = pdate - datetime.timedelta(days = 1)
     #end_date = pdate + datetime.timedelta(days = 1)
-    full_on_map = print_days(relay_func, start_date, end_date, cfg_clone, sts_clone, socket_name)
+    full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
 
     sts_clone = relay_status.clone()
     #titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
     titles = ["name", "switch-mode", "socket pwr","auto control",  "auto ovr"]
     socket_row = get_table_row(sts_clone, titles, socket_name, "socket_info")
+    pr.disable()
+    pr.print_stats()
     return render_template('socket_info.html',
                            table_row=socket_row,
                            socket_name=socket_name,
                            control=relay_control,
                            config=cfg_clone,
                            titles = titles,
-                           pwr_map=on_map,
+                           pwr_map=on_map[0],
                            ovr_map=full_on_map)
 
 def webserver_set_config_status (control, config, status, func):

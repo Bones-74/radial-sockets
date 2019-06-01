@@ -1,15 +1,17 @@
 import datetime
+import pytz
 
-
-from time_utils import time_now, ParseSimpleTime, get_sun, ConvertToLocalTime
+from Sun import get_sun
+from time_utils import time_now, ParseSimpleTime, AssignAsLocalTime
 
 SUNRISE_STR = 'sr'
 SUNSET_STR = 'ss'
 
 class ActivationTime(object):
+    reset_time = AssignAsLocalTime(datetime.datetime.min + datetime.timedelta(days=100))
     def __init__(self, basetime, floor, ceiling):
 
-        self.last_activation_time = ConvertToLocalTime(datetime.datetime.min + datetime.timedelta(days=100))
+        self.last_activation_time = self.reset_time
 
         self.basetime = basetime
         self.floortime = floor
@@ -24,6 +26,11 @@ class ActivationTime(object):
         act_time_.last_activation_time = self.last_activation_time
         return act_time_
 
+    def reset_activation_time(self):
+        #timezone = pytz.timezone("America/Los_Angeles")
+        #start_date = datetime.datetime.min + datetime.timedelta(days = 50)
+        self.last_activation_time = self.reset_time
+
     def update_activation_time(self, timenow):
         update_activation_time = False
         update_time = self.last_activation_time + datetime.timedelta(days=1)
@@ -32,25 +39,26 @@ class ActivationTime(object):
             self.last_activation_time = timenow#
 
         if update_activation_time:
-            base_t = self.convert_to_local_time(self.basetime, timenow)
+            base_t = self.convert_to_time(self.basetime, timenow)
             ceil_t = 0
             floor_t = 0
             if self.ceilingtime is not None:
-                ceil_t = self.convert_to_local_time(self.ceilingtime, timenow)
+                ceil_t = self.convert_to_time(self.ceilingtime, timenow)
             if self.floortime is not None:
-                floor_t = self.convert_to_local_time(self.floortime, timenow)
+                floor_t = self.convert_to_time(self.floortime, timenow)
 
             self.activation_time_lcl = base_t
             if floor_t:
                 if base_t < floor_t:
-                    self.activation_time_lcl = floor_t
+                    self.activation_time_lcl = None
             elif ceil_t:
                 if base_t > ceil_t:
-                    self.activation_time_lcl = ceil_t
+                    self.activation_time_lcl = None
 
         return self.activation_time_lcl
 
-    def convert_to_local_time(self, time_dict, timenow):
+#    def convert_to_local_time(self, time_dict, timenow):
+    def convert_to_time(self, time_dict, timenow):
         sun = get_sun()
 
         basetime = time_dict  ["base"]
@@ -58,21 +66,23 @@ class ActivationTime(object):
         rand = time_dict  ["rand"]
 
         if basetime.strip() == SUNSET_STR:
-            ss_time = sun.getSunsetTime(date=timenow)
-            hours = ss_time['dt'].hour
-            minutes = ss_time['dt'].minute
+            sunset_lcl = sun.getSunsetTimeLocal(date=timenow)
+            #sunset_lcl = AssignAsLocalTime(ss_time['dt'])
+            hours = sunset_lcl.hour
+            minutes = sunset_lcl.minute
             basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 #            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         elif basetime.strip() == SUNRISE_STR:
-            ss_time = sun.getSunriseTime(date=timenow)
-            hours = ss_time['dt'].hour
-            minutes = ss_time['dt'].minute
+            sunrise_lcl = sun.getSunriseTimeLocal(date=timenow)
+            #sunrise_lcl = AssignAsLocalTime(ss_time['dt'])
+            hours = sunrise_lcl.hour
+            minutes = sunrise_lcl.minute
             basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 #            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         else:
-            (parse_ok, hours,mins) = ParseSimpleTime(basetime,enforce_strict=True)
+            (parse_ok, hours, mins) = ParseSimpleTime(basetime,enforce_strict=True)
             if parse_ok:
                 basetime_lcl = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
 #                self.basetime = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)

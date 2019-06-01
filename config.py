@@ -159,6 +159,10 @@ class Socket(object):
         #self.current_state = STATE_NOT_ASSIGNED
         #self.current_pwr_state = STATE_NOT_ASSIGNED
 
+    def reset_state_activation_time(self):
+        for state in self.states:
+            state.reset_activation_time()
+
     @staticmethod
     def parse_socket (state_def):
         skt_name = Socket.SKT_MISSING_TXT
@@ -232,12 +236,26 @@ class Socket(object):
         # stretches over midnight into the new day
         next_state = self.states [-1]
         for state in self.states:
-            state_start = state.activation_time.update_activation_time(timenow).time()
-            if state_start <= timenow.time():
-                next_state = state
+            state_start_datetime = state.activation_time.update_activation_time(timenow)
+            if state_start_datetime:
+                state_start = state_start_datetime.time()
+                if state_start and state_start <= timenow.time():
+                    next_state = state
 
         skt_status.calcd_state = next_state.id
         skt_status.calcd_auto_sts = next_state.power_state
+
+    def calc_activate_times_for_states(self, timenow):
+        # calculate the active states for this socket for the
+        # day represented by 'timenow
+
+#        timenow = time_now()
+
+        # prepare next state as the last one defined, ie, the one that
+        # stretches over midnight into the new day
+        for state in self.states:
+            state.activation_time.update_activation_time(timenow)
+
 
     def clone (self):
         skt_ = Socket (self.name, self.board, self.channel, self.sense)
@@ -260,6 +278,9 @@ class SocketState(object):
         skt_ = SocketState (self.id, self.power_state, self.activation_time, self.state_txt)
         return skt_
 
+    def reset_activation_time(self):
+        self.activation_time.reset_activation_time()
+
     @staticmethod
     def parse_state (state_id, state_txt):
         # split on the '@'- the first part is the stat id and the power
@@ -280,7 +301,7 @@ class SocketState(object):
         try:
             activatation_time = ActivationTime.parse_activation_time(line_parts[1])
         except:
-            pass
+            activatation_time = None
 
         if power_txt == PowerStatus.PWR_OFF_STR:
             power_id = PowerStatus.PWR_OFF

@@ -13,7 +13,7 @@ hall03
 
 hall02
 {
-  state 1
+  state 0
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
@@ -32,7 +32,7 @@ hall01
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
-  override-session-state -1
+  override-session-state 1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
   override-t-until None
 }

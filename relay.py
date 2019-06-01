@@ -6,7 +6,8 @@ import time
 
 from config import Config, App
 from status import OverrideStatus, SocketStatus, PowerStatus, Status
-from time_utils import time_now, getDateAndTime, get_sun, set_location_coords, activate_test_time, deactivate_test_time
+from time_utils import time_now, getDateAndTime, set_location_coords, activate_test_time, deactivate_test_time, AssignAsLocalTime
+from Sun import get_sun
 from control import Control
 #from time import sleep
 from webserver.webserver_01 import web_svr, webserver_set_config_status
@@ -324,8 +325,12 @@ def send_next_statuses (control, socket_cfg, socket_sts, board):
 
 
 sem = threading.Semaphore()
+count = 0
 def relay_process(control, config, status, overrides, socket_name=None):
+    exit_code = relay_exit_codes.EXIT_CODE_OK
     try:
+        global count
+        count += 1
         # grab the semaphore to gaurd shared resource
         sem.acquire()
         # see if this is a simulated run and activate sim_time if true
@@ -336,8 +341,11 @@ def relay_process(control, config, status, overrides, socket_name=None):
 
         # fill in todays sunrise/sunset details
         sun = get_sun()
-        control.sunrise = sun.getSunriseTime(control.time)
-        control.sunset = sun.getSunsetTime(control.time)
+        control.sunrise = sun.getSunriseTimeLocal(control.time)
+        control.sunset = sun.getSunsetTimeLocal(control.time)
+        #control.sunrise = AssignAsLocalTime(sunrise['dt'])
+        #control.sunset = AssignAsLocalTime(sunset['dt'])
+
 
         # read the current board statuses
         if not control.simulate_run:
@@ -349,6 +357,7 @@ def relay_process(control, config, status, overrides, socket_name=None):
 
         # run on all sockets or just one?
         if socket_name != None:
+            pass
             if socket_name not in config.sockets:
                 return relay_exit_codes.EXIT_CODE_CMDLINE_ERROR_UNRECOGNISED_SOCKET
             if socket_name not in status.sockets:
@@ -381,11 +390,13 @@ def relay_process(control, config, status, overrides, socket_name=None):
             status.write_file (full_path)
 
     except:
-        return relay_exit_codes.EXIT_CODE_PROCESSING_RELAY_ERROR
+        exit_code =  relay_exit_codes.EXIT_CODE_PROCESSING_RELAY_ERROR
+        raise
     finally:
+        pass
         sem.release()
 
-    return relay_exit_codes.EXIT_CODE_OK
+    return exit_code
 
 
 def display_validation (validation_res, text, config_file):

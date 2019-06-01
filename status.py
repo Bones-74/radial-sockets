@@ -141,6 +141,8 @@ class SocketStatus(object):
         self.ovr_t_until = ovr_t_until
         self.sts_ovr_on = False
         self.sts_auto_on = False
+        self.calcd_state = -1
+        self.calcd_auto_sts = PowerStatus.PWR_OFF
 
         self.history = dict()
         self.history ["pwr"] = dict()

@@ -2,9 +2,8 @@ import pytz
 import datetime
 import time
 
-from Sun import Sun
+#from tzlocal import get_localzone # $ pip install tzlocal
 
-location_coords = {'longitude' : -1.82, 'latitude' : 52.9 }
 
 testing_time = None
 def calc_test_time(ttime_hrs,ttime_mins, basedate=None):
@@ -54,20 +53,46 @@ def set_location_coords(coords):
     global location_coords
     location_coords = coords
 
-def get_sun():
-    return Sun(location_coords)
-
-
-def AssignAsLocalTime(dt_lcl):
-    local_tz = pytz.timezone ("Europe/London")
-    return local_tz.localize(dt_lcl)
-
-
-def ConvertToLocalTime(dt_utc):
-    local_tz = pytz.timezone ("Europe/London")
+def AssignAsUtcTime(naive_dt):
     utc_tz = pytz.timezone ("Etc/UTC")
-    dt_utc = utc_tz.localize(dt_utc)
+    return utc_tz.localize(naive_dt)
+
+
+def AssignAsLocalTime(naive_dt):
+    local_tz = pytz.timezone ("Europe/London")
+    return local_tz.localize(naive_dt)
+
+#    tz = get_localzone()
+#    local_dt = tz.localize(dt_lcl)
+#    utc_dt = local_dt.astimezone(pytz.utc) #NOTE: utc.normalize() is unnecessary here    local_tz = datetime.datetime.now().astimezone().tzinfo
+#    return dt_lcl
+
+#    return local_tz.localize(dt_lcl)
+#    local_tz = pytz.timezone ("Europe/London")
+#    return dt_lcl.replace(tzinfo=local_tz)
+
+
+def ConvertUtcToLocalTime(dt_utc):
+    local_tz = pytz.timezone ("Europe/London")
     return dt_utc.astimezone(local_tz)
+
+    
+    
+#    now = datetime.datetime.now()
+#    local_tz = pytz.timezone ("Europe/London")
+#    utc_tz = pytz.timezone ("Etc/UTC")
+#    dt_local = utc_tz.localize(dt_utc)
+#    return dt_utc.astimezone(local_tz)
+
+
+def ConvertLocalToUtcTime(dt_local):
+    local_tz = pytz.timezone ("Etc/UTC")
+    return dt_local.astimezone(local_tz)
+#    now = datetime.datetime.now()
+#    local_tz = pytz.timezone ("Europe/London")
+#    utc_tz = pytz.timezone ("Etc/UTC")
+#    dt_utc = utc_tz.localize(dt_utc)
+#    return dt_utc.astimezone(local_tz)
 
 
 def intTryParse(value):
