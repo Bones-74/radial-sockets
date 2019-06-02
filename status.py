@@ -7,6 +7,7 @@ class PowerStatus(object):
     PWR_ON_STR  = "on"
     PWR_OFF = 0
     PWR_ON  = 1
+    PWR_UNK = -1
 
     def __init__(self, initial_sts=PWR_OFF):
         self.status = initial_sts

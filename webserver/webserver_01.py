@@ -1,14 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for
 import datetime
 import pytz
+import os
 
-from print_utils import print_day, print_days
+from print_utils import print_day, print_days, print_day_image, print_days_image
 from config import Board
 from boards.SimBoard import SimBoard
 from status import PowerStatus, OverrideStatus
 
 web_svr = Flask(__name__)
 
+#IMAGES_FOLDER = os.path.join('static', 'images')
+IMAGES_FOLDER = 'images'
+web_svr.config['UPLOAD_FOLDER'] = IMAGES_FOLDER
+web_svr.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+SINGLE_DAY_MAP_FN = 'sday.png'
+MULTI_DAY_MAP_FN = 'mday.png'
 
 '''
 class relay_webserver(Flask):
@@ -90,17 +98,26 @@ def socket_info(socket_name):
     import cProfile
     pr = cProfile.Profile()
     pr.enable()
+
+    single_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], SINGLE_DAY_MAP_FN)
+    multi_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], MULTI_DAY_MAP_FN)
+    single_day_full = os.path.join(web_svr.root_path, 'static', single_day)
+    multi_day_full = os.path.join(web_svr.root_path, 'static', multi_day)
+
     board_name = cfg_clone.sockets[socket_name].board
     cfg_clone.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
     pdate = datetime.datetime.now(pytz.utc)
-    on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
+    #on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
+    print_day_image(single_day_full, pdate, cfg_clone, socket_name, day_height=25)
 
-    start_date = pdate - datetime.timedelta(days = 50)
-    end_date = pdate + datetime.timedelta(days = 50)
+    start_date = pdate - datetime.timedelta(days = 400)
+    end_date = pdate + datetime.timedelta(days = 400)
     #start_date = pdate - datetime.timedelta(days = 1)
     #end_date = pdate + datetime.timedelta(days = 1)
-    full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
+    #full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
+    print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name)
+
 
     sts_clone = relay_status.clone()
     #titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
@@ -108,14 +125,20 @@ def socket_info(socket_name):
     socket_row = get_table_row(sts_clone, titles, socket_name, "socket_info")
     pr.disable()
     pr.print_stats()
+
+    
+       
+    
     return render_template('socket_info.html',
                            table_row=socket_row,
                            socket_name=socket_name,
                            control=relay_control,
                            config=cfg_clone,
                            titles = titles,
-                           pwr_map=on_map[0],
-                           ovr_map=full_on_map)
+                           s_map=single_day,
+                           m_map=multi_day)
+#                           pwr_map=on_map[0],
+#                           ovr_map=full_on_map)
 
 def webserver_set_config_status (control, config, status, func):
     global relay_control
