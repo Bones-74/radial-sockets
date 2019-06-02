@@ -4,7 +4,7 @@ Created on 10 May 2019
 @author: root
 '''
 from datetime import timedelta
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 #from relay import relay_process
 from status import PowerStatus
@@ -121,10 +121,10 @@ def print_days(start_date, end_date, config, _status, socket_name, step=10):
 
     return auto_map
 
-def print_day_image(fn, date, config, socket_name, day_width=800, day_height=5):
-    return print_days_image(fn, date, date, config, socket_name, day_width, day_height)
+def print_day_image(fn, date, config, socket_name, image_width=800, day_height=5):
+    return print_days_image(fn, date, date, config, socket_name, image_width, day_height)
 
-def print_days_image(fn, start_date, end_date, config, socket_name, day_width=800, day_height=5):
+def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5):
     # start/finish one day before/efter the required time frame
     # We do not print the img_start_date, but collect info on it so we know the starting
     # power for the 'real' start_date
@@ -136,7 +136,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, day_width=80
     ON_COLOR = 'yellow'
     OFF_COLOR = 'white'
     draw_sr_ss = True
-    draw_hours = 3
+    draw_hours = 2
     SUN_COLOR = 'red'
     ss_sr_width = 2
     hour_width = 1
@@ -144,9 +144,13 @@ def print_days_image(fn, start_date, end_date, config, socket_name, day_width=80
     HOUR_COLOR = 'black'
 
     # create image:
+    offset_x = 10
+    offset_y = 20
+    offset_text_x = -10
     num_days = (end_date - start_date).days + 1
-    image_hieght = num_days * day_height
-    img = Image.new('RGB', (day_width, image_hieght), color = OFF_COLOR)
+    image_hieght = num_days * day_height + offset_y
+    img = Image.new('RGB', (image_width, image_hieght), color = OFF_COLOR)
+    day_width = (image_width - (2 *offset_x))
 
     # build up the image day-by-day
     draw = ImageDraw.Draw(img)
@@ -169,27 +173,12 @@ def print_days_image(fn, start_date, end_date, config, socket_name, day_width=80
                 # fill in to end of day if PWR is ON
                 if last_power_state == PowerStatus.PWR_ON:
                     rect_x1 = last_x_pos
-                    rect_x2 = day_width
-                    rect_y1 = day_idx * day_height
-                    rect_y2 = (day_idx + 1) * day_height
+                    rect_x2 = image_width - offset_x
+                    rect_y1 = offset_y + (day_idx * day_height)
+                    rect_y2 = offset_y + ((day_idx + 1) * day_height)
                     rect_xy1 = (rect_x1, rect_y1)
                     rect_xy2 = (rect_x2, rect_y2)
                     draw.rectangle((rect_xy1, rect_xy2), fill=ON_COLOR)
-
-                # draw hour markers as desired
-                if draw_hours:
-                    for hour in range(0, 24 +1, draw_hours):
-                        percentage_of_day = (hour / (float(24)))
-                        current_width = int(day_width * percentage_of_day)
-                        if current_width >= day_width:
-                            # shrink by enough pixels to draw the final line.
-                            current_width = day_width - hour_width
-                        p_x = current_width
-                        p_y1 = day_idx * day_height
-                        p_y2 = (day_idx + 1) * day_height
-                        point_xy1 = (p_x, p_y1)
-                        point_xy2 = (p_x, p_y2)
-                        draw.line((point_xy1, point_xy2), HOUR_COLOR, hour_width)
 
                 # draw on the sr/ss marker desired
                 if draw_sr_ss:
@@ -200,9 +189,9 @@ def print_days_image(fn, start_date, end_date, config, socket_name, day_width=80
                     minutes_so_far_today = day_minutes(sr_dt)
                     percentage_of_day = (minutes_so_far_today / (float(MINS_IN_DAY)))
                     current_width = int(day_width * percentage_of_day)
-                    p_x = current_width
-                    p_y1 = day_idx * day_height
-                    p_y2 = (day_idx + 1) * day_height
+                    p_x = current_width + offset_x
+                    p_y1 = offset_y + (day_idx * day_height)
+                    p_y2 = offset_y + ((day_idx + 1) * day_height)
                     point_xy1 = (p_x, p_y1)
                     point_xy2 = (p_x, p_y2)
                     draw.line((point_xy1, point_xy2), SUN_COLOR, ss_sr_width)
@@ -210,15 +199,15 @@ def print_days_image(fn, start_date, end_date, config, socket_name, day_width=80
                     minutes_so_far_today = day_minutes(ss_dt)
                     percentage_of_day = (minutes_so_far_today / (float(MINS_IN_DAY)))
                     current_width = int(day_width * percentage_of_day)
-                    p_x = current_width
-                    p_y1 = day_idx * day_height
-                    p_y2 = (day_idx + 1) * day_height
+                    p_x = current_width + offset_x
+                    p_y1 = offset_y + (day_idx * day_height)
+                    p_y2 = offset_y + ((day_idx + 1) * day_height)
                     point_xy1 = (p_x, p_y1)
                     point_xy2 = (p_x, p_y2)
                     draw.line((point_xy1, point_xy2), SUN_COLOR, ss_sr_width)
 
                 # reset to start of day
-                last_x_pos = 0
+                last_x_pos = offset_x
                 day_idx += 1
 
             else:
@@ -240,17 +229,37 @@ def print_days_image(fn, start_date, end_date, config, socket_name, day_width=80
                 current_width = int(day_width * percentage_of_day)
                 if last_power_state == PowerStatus.PWR_ON:
                     rect_x1 = last_x_pos
-                    rect_x2 = current_width
-                    rect_y1 = day_idx * day_height
-                    rect_y2 = (day_idx + 1) * day_height
+                    rect_x2 = current_width + offset_x
+                    rect_y1 = offset_y + (day_idx * day_height)
+                    rect_y2 = offset_y + ((day_idx + 1) * day_height)
                     rect_xy1 = (rect_x1, rect_y1)
                     rect_xy2 = (rect_x2, rect_y2)
                     draw.rectangle((rect_xy1, rect_xy2), fill=ON_COLOR)
 
-                last_x_pos = current_width + 1
+                last_x_pos = offset_x + current_width + 1
 
             last_power_state = power
             last_datetime = act_time
+
+    # draw hour markers as desired
+    if draw_hours:
+        # get a font
+        fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 18)
+        # get a drawing context
+        for hour in range(0, 24 +1, draw_hours):
+            percentage_of_day = (hour / (float(24)))
+            current_width = int(day_width * percentage_of_day)
+            if current_width >= day_width:
+                # shrink by enough pixels to draw the final line.
+                current_width = day_width - hour_width
+            p_x = current_width + offset_x
+            p_y1 = offset_y
+            p_y2 = offset_y + num_days * day_height
+            point_xy1 = (p_x, p_y1)
+            point_xy_text = (p_x + offset_text_x, 0)
+            point_xy2 = (p_x, p_y2)
+            draw.line((point_xy1, point_xy2), HOUR_COLOR, hour_width)
+            draw.text(point_xy_text, str(hour), font=fnt, fill=(0,0,0,255))
 
     img.save(fn, 'png')
 
