@@ -44,7 +44,8 @@ def deactivate_test_time():
 
 def time_now():
     if testing_time:
-        return AssignAsLocalTime(testing_time)
+        return testing_time
+        #return AssignAsLocalTime(testing_time)
     else:
         return AssignAsLocalTime(datetime.datetime.now())
 

@@ -3,15 +3,16 @@ import sys
 import argparse
 import threading
 import time
+from time import sleep
+from datetime import timedelta
 
 from config import Config, App
 from status import OverrideStatus, SocketStatus, PowerStatus, Status
-from time_utils import time_now, getDateAndTime, set_location_coords, activate_test_time, deactivate_test_time, AssignAsLocalTime
+from time_utils import time_now, getDateAndTime, set_location_coords, activate_test_time, deactivate_test_time, calc_and_activate_test_time
 from Sun import get_sun
 from control import Control
 #from time import sleep
 from webserver.webserver_01 import web_svr, webserver_set_config_status
-from Sun import Sun
 
 class relay_exit_codes():
     EXIT_CODE_OK = 0
@@ -79,6 +80,12 @@ def process_args(args=None):
     arg_parser.add_argument(
         "--ttime",
         help="time string to be used in testing, expect shortdate pattern: eg, 2009-06-15T13:45:30")
+    arg_parser.add_argument(
+        "--super-time",
+        help="speed up by factor of 60: an hour takes a minute, a day takes 24 mins",
+        nargs='?',
+        const=1,
+        type=int)
 
     return arg_parser.parse_args(args=args)
 
@@ -552,7 +559,23 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
             thread = threading.Thread(target=main__run_from_scheduler,args=(control, config, status))
             thread.start()
 
+    if args.super_time:
+        st_args = []
+        st_args.append(args.super_time)
+        st_thread = threading.Thread(target=supertime_change_time,args=st_args)
+        st_thread.start()
+
     return relay_exit_codes.EXIT_CODE_OK
+
+def supertime_change_time(mins_per_sec):
+    accelleration_per_second = timedelta(minutes=mins_per_sec)
+    timenow = time_now()
+    while True:
+        sleep(1)
+        timenow += accelleration_per_second
+        activate_test_time(timenow)
+
+    return err_code
 
 def main__run_from_scheduler(control, config, status):
     while not control.exit_now:

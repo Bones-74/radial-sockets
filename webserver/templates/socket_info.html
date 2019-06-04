@@ -2,9 +2,11 @@
 <html>
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{ socket_links|safe }}
+    <br> <br> <br>
     Rose House timers circuits: <p>Date/Time: <span id="datetime"></span></p>
     <p>Sunrise@ {{ control.sunrise }} and sunset@ {{ control.sunset }}</p>
-    
+
     <script>
     var dt = new Date();
     document.getElementById("datetime").innerHTML = dt.toLocaleString();
@@ -22,15 +24,17 @@
          </tr>
       </table>
 
-
-      <!-- output the states -->
-
-      {% set socket_cfg = config.sockets [socket_name] %}
-      {% for state in socket_cfg.states %}
-          <p>{{ state.state_txt }}</p>
-      {% endfor %}
-      <br><img src="{{ url_for('static', filename=s_map) }}" alt="User Image"><br>
-      <br><img src="{{ url_for('static',filename=m_map) }}" alt="User Image"><br>
+      <div style="clear: left;">
+          <p style="float: left;">
+              <img src="{{ url_for('static',filename=m_map) }}" alt="User Image">
+          </p>
+          <br>
+          <!-- output the states -->
+          {% set socket_cfg = config.sockets [socket_name] %}
+          {% for state in socket_cfg.states %}
+              <p>{{ state.state_txt }}</p>
+          {% endfor %}
+      </div>
    </body>
 
    

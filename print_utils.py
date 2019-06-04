@@ -59,6 +59,8 @@ def get_on_off_times(start_date, end_date, config, socket_name):
             marker_time = d.replace(hour=0, minute=0, second=0, microsecond=0)
             transition_seq.append((marker_time, power))
 
+    transition_seq_ordered = []
+    
     return transition_seq, sr_ss_seq
 
 def print_days(start_date, end_date, config, _status, socket_name, step=10):
@@ -122,9 +124,9 @@ def print_days(start_date, end_date, config, _status, socket_name, step=10):
     return auto_map
 
 def print_day_image(fn, date, config, socket_name, image_width=800, day_height=5):
-    return print_days_image(fn, date, date, config, socket_name, image_width, day_height)
+    return print_days_image(fn, date, date, config, socket_name, image_width, day_height=3)
 
-def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5):
+def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5, current_day=None):
     # start/finish one day before/efter the required time frame
     # We do not print the img_start_date, but collect info on it so we know the starting
     # power for the 'real' start_date
@@ -134,7 +136,8 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     transition_seq, ss_sr_seq = get_on_off_times(img_start_date, img_end_date, config, socket_name)
 
     ON_COLOR = 'yellow'
-    OFF_COLOR = 'white'
+    OFF_COLOR1 = 'white'
+    OFF_COLOR2 = 'grey'
     draw_sr_ss = True
     draw_hours = 2
     SUN_COLOR = 'red'
@@ -149,7 +152,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     offset_text_x = -10
     num_days = (end_date - start_date).days + 1
     image_hieght = num_days * day_height + offset_y
-    img = Image.new('RGB', (image_width, image_hieght), color = OFF_COLOR)
+    img = Image.new('RGB', (image_width, image_hieght), color = OFF_COLOR1)
     day_width = (image_width - (2 *offset_x))
 
     # build up the image day-by-day
@@ -159,7 +162,10 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     last_power_state = PowerStatus.PWR_OFF
     last_x_pos = 0
     day_idx = 0
+    today_idx = -1
     sr_ss_idx = 0
+    month_count = 0
+    month_names = []
     for (act_time, power) in transition_seq:
         if last_datetime is None:
             last_datetime = act_time
@@ -169,7 +175,36 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
         if ((last_datetime.month == act_time.month) and (last_datetime.day < act_time.day)) \
          or ((last_datetime.month < act_time.month) and (act_time.day == 1)) \
          or ((last_datetime.year < act_time.year) and (act_time.month == 1)):
+
+            # see if this the current day for highlighting later:
+            if current_day and \
+                ((current_day.day == act_time.day) and
+                 (current_day.month == act_time.month) and
+                 (current_day.year == act_time.year)):
+                today_idx = day_idx
+
             if start_display:
+                # draw every other month a slightly different color
+                if ((last_datetime.month < act_time.month) and (act_time.day == 1)) \
+                 or ((last_datetime.year < act_time.year) and (act_time.month == 1)):
+                    rect_x1 = 0
+                    rect_x2 = image_width
+                    import calendar
+                    num_days_in_month = calendar.monthrange(act_time.year, act_time.month)[1]
+                    day_idx_mod = day_idx + num_days_in_month
+                    if day_idx_mod > num_days:
+                        day_idx_mod = num_days
+                    rect_y1 = offset_y + ((day_idx + 1) * day_height)
+                    rect_y2 = offset_y + ((day_idx_mod) * day_height)
+                    rect_xy1 = (rect_x1, rect_y1)
+                    rect_xy2 = (rect_x2, rect_y2)
+                    if month_count % 2 == 0:
+                        draw.rectangle((rect_xy1, rect_xy2), fill=OFF_COLOR2)
+
+                    point_xy_text = (0, rect_y1)
+                    month_names.append((point_xy_text, calendar.month_name[act_time.month]))
+                    month_count += 1
+
                 # fill in to end of day if PWR is ON
                 if last_power_state == PowerStatus.PWR_ON:
                     rect_x1 = last_x_pos
@@ -260,6 +295,39 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
             point_xy2 = (p_x, p_y2)
             draw.line((point_xy1, point_xy2), HOUR_COLOR, hour_width)
             draw.text(point_xy_text, str(hour), font=fnt, fill=(0,0,0,255))
+
+    # draw the month names
+    fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 12)
+    for (point, name) in month_names:
+        draw.text(point, name, font=fnt, fill=(0,0,0,255))
+
+    # draw current day marker as desired
+    if current_day:
+        p_x1 = 0
+        p_x2 = image_width - 1
+        p_y1 = (offset_y + (today_idx * day_height)) - 1
+        p_y2 = (offset_y + ((today_idx + 1) * day_height)) + 1
+        point_xy1 = (p_x1, p_y1)
+        point_xy2 = (p_x2, p_y2)
+        draw.rectangle((point_xy1, point_xy2), outline=HOUR_COLOR)
+        # get a font
+        fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 12)
+        today_text_x = image_width - 50
+        point_xy_text = (today_text_x, p_y2)
+        draw.text(point_xy_text, "today", font=fnt, fill=(0,0,0,255))
+
+    # draw current time marker as desired
+    if current_day:
+        minutes_so_far_today = day_minutes(current_day)
+        percentage_of_day = (minutes_so_far_today / (float(MINS_IN_DAY)))
+        current_width = int(day_width * percentage_of_day)
+        line_x1 = current_width + offset_x - 2
+        line_x2 = current_width + offset_x + 2
+        line_y1 = offset_y
+        line_y2 = offset_y + (num_days * day_height)
+        rect_xy1 = (line_x1, line_y1)
+        rect_xy2 = (line_x2, line_y2)
+        draw.rectangle((rect_xy1, rect_xy2), outline=HOUR_COLOR)
 
     img.save(fn, 'png')
 

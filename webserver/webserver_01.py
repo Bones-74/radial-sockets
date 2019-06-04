@@ -4,6 +4,7 @@ import pytz
 import os
 
 from print_utils import print_day, print_days, print_day_image, print_days_image
+from time_utils import time_now
 from config import Board
 from boards.SimBoard import SimBoard
 from status import PowerStatus, OverrideStatus
@@ -107,16 +108,17 @@ def socket_info(socket_name):
     board_name = cfg_clone.sockets[socket_name].board
     cfg_clone.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
-    pdate = datetime.datetime.now(pytz.utc)
+    pdate = time_now()
+
     #on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
     print_day_image(single_day_full, pdate, cfg_clone, socket_name, day_height=25)
 
-    start_date = pdate - datetime.timedelta(days = 400)
-    end_date = pdate + datetime.timedelta(days = 400)
+    start_date = pdate - datetime.timedelta(days = 10)
+    end_date = pdate + datetime.timedelta(days = 10)
     #start_date = pdate - datetime.timedelta(days = 1)
     #end_date = pdate + datetime.timedelta(days = 1)
     #full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
-    print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name)
+    print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name, day_height=2, current_day=pdate)
 
 
     sts_clone = relay_status.clone()
@@ -127,7 +129,7 @@ def socket_info(socket_name):
     pr.print_stats()
 
     
-       
+    socket_links = get_sockets_in_line (cfg_clone)
     
     return render_template('socket_info.html',
                            table_row=socket_row,
@@ -136,7 +138,8 @@ def socket_info(socket_name):
                            config=cfg_clone,
                            titles = titles,
                            s_map=single_day,
-                           m_map=multi_day)
+                           m_map=multi_day,
+                           socket_links=socket_links)
 #                           pwr_map=on_map[0],
 #                           ovr_map=full_on_map)
 
@@ -160,6 +163,15 @@ def get_table_rows(status, titles, template):
 
     table_contents = ''.join(table_rows)
     return table_contents
+
+def get_sockets_in_line(status):
+    html_arr = []
+    for socket in status.sockets:
+        socket_link = '<a href="http://localhost:30080/socket_info/{0}">{0}</a>&nbsp;'.format(socket)
+        html_arr.append(socket_link)
+
+    return ''.join(html_arr)
+
 
 def get_table_row(status, titles, socket_name, template):
     socket_sts = status.sockets[socket_name]
