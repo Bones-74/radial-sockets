@@ -173,7 +173,7 @@ def check_and_store_override(socket, new_ovr):
     if socket.ovr_sts != new_ovr:
         # Log the change:
         ovr_history = socket.history["ovr"]
-        ovr_history [time_now()] = new_ovr
+        ovr_history.append((time_now(), new_ovr))
         socket.ovr_sts = new_ovr
 
 def process_override_off(status, ovr_off):
@@ -323,8 +323,10 @@ def send_next_statuses (control, socket_cfg, socket_sts, board):
 
         if socket_sts.actual_pwr != new_pwr_status:
             pwr_history = socket_sts.history["pwr"]
-            pwr_history[timenow] = new_pwr_status
+            pwr_history.append((timenow, new_pwr_status))
             socket_sts.actual_pwr = new_pwr_status
+            if socket_sts.name == "hall03":
+                print ("{0}: {1}".format(timenow, new_pwr_status))
 
         if not control.simulate_run:
 #            board = config.boards[socket.board]
@@ -549,12 +551,15 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
                 # Start the webserver used for controlling the app
                 #thread = threading.Thread(target=websrv_01.run, kwargs={'port': config.app.webserver_port,'debug': True})
                 webserver_set_config_status(control, config, status, relay_process)
-                thread = threading.Thread(target=web_svr.run, kwargs={'port': config.app.webserver_port})
+                thread = threading.Thread(target=web_svr.run, kwargs={'host': '0.0.0.0', 'port': config.app.webserver_port})
                 thread.start()
                 pass
 
             # schedule a timer to kick the logic processing
-            control.schedule_run(config.app.update_timer)
+            update_time = config.app.update_timer
+            if args.super_time:
+                update_time = config.app.update_timer / args.super_time
+            control.schedule_run(update_time)
             # configure & start thread
             thread = threading.Thread(target=main__run_from_scheduler,args=(control, config, status))
             thread.start()

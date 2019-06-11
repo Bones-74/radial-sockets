@@ -96,9 +96,9 @@ def socket_info(socket_name):
     global relay_func
     cfg_clone = relay_config.clone()
     sts_clone = relay_status.clone()
-    import cProfile
-    pr = cProfile.Profile()
-    pr.enable()
+    #import cProfile
+    #pr = cProfile.Profile()
+    #pr.enable()
 
     single_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], SINGLE_DAY_MAP_FN)
     multi_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], MULTI_DAY_MAP_FN)
@@ -109,12 +109,13 @@ def socket_info(socket_name):
     cfg_clone.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
     pdate = time_now()
+    pdate_str = pdate.strftime("%Y-%m-%d %H:%M:%S")
 
     #on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
     print_day_image(single_day_full, pdate, cfg_clone, socket_name, day_height=25)
 
-    start_date = pdate - datetime.timedelta(days = 10)
-    end_date = pdate + datetime.timedelta(days = 10)
+    start_date = pdate - datetime.timedelta(days = 100)
+    end_date = pdate + datetime.timedelta(days = 100)
     #start_date = pdate - datetime.timedelta(days = 1)
     #end_date = pdate + datetime.timedelta(days = 1)
     #full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
@@ -125,13 +126,16 @@ def socket_info(socket_name):
     #titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
     titles = ["name", "switch-mode", "socket pwr","auto control",  "auto ovr"]
     socket_row = get_table_row(sts_clone, titles, socket_name, "socket_info")
-    pr.disable()
-    pr.print_stats()
+    #pr.disable()
+    #pr.print_stats()
 
     
     socket_links = get_sockets_in_line (cfg_clone)
+    # reset info by cloning the real config again
+    cfg_clone = relay_config.clone()
     
     return render_template('socket_info.html',
+                           time_str=pdate_str,
                            table_row=socket_row,
                            socket_name=socket_name,
                            control=relay_control,

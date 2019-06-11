@@ -1,6 +1,6 @@
 app
 {
-  update_timer 1
+  update_timer 10
   webserver_port 30080
   location -1.82:52.9
 }
@@ -8,8 +8,8 @@ app
 board
 {
   name b1
-  #type ada_ft232h
-  type SIM
+  type ada_ft232h
+  #type SIM
   port /dev/ttyUSB0
   num-chan 16
 }
@@ -18,19 +18,18 @@ socket
 {
   name hall01
   board b1
-  channel 08
+  channel 02
   sense active-low
   monitor_socket
   {
      board b1
-     channel 14
+     channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
      board b1
-     channel 15
-     sense active-low
+     channel 04
   }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
@@ -56,10 +55,22 @@ socket
 
 socket
 {
-  name hall02
+  name snug02
   board b1
-  channel 01
+  channel 03
   sense active-low
+  monitor_socket
+  {
+     board b1
+     channel 01
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     channel 05
+     sense active-low
+  }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
@@ -74,10 +85,23 @@ socket
 
 socket
 {
-  name hall02a
+  name frnt03
   board b1
-  channel 04
+  channel 09
   sense active-low
+  monitor_socket
+  {
+     board b1
+     #channel 3
+     channel 11
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     channel 07
+     sense active-low
+  }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
@@ -96,10 +120,23 @@ socket
 
 socket
 {
-  name hall03
+  name gdn04
   board b1
-  channel 02
+  channel 08
   sense active-low
+  monitor_socket
+  {
+     board b1
+     channel 10
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     #channel 10
+     channel 06
+     sense active-low
+  }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00

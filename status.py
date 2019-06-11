@@ -146,9 +146,9 @@ class SocketStatus(object):
         self.calcd_auto_sts = PowerStatus.PWR_OFF
 
         self.history = dict()
-        self.history ["pwr"] = dict()
-        self.history ["ovr"] = dict()
-        self.history ["man"] = dict()
+        self.history ["pwr"] = []
+        self.history ["ovr"] = []
+        self.history ["man"] = []
 
     def clone(self):
         skt_sts_ = SocketStatus (self.name,

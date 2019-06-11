@@ -275,7 +275,8 @@ class SocketState(object):
         self.state_txt = state_txt
 
     def clone (self):
-        skt_ = SocketState (self.id, self.power_state, self.activation_time, self.state_txt)
+        act_time_clone = self.activation_time.clone()
+        skt_ = SocketState (self.id, self.power_state, act_time_clone, self.state_txt)
         return skt_
 
     def reset_activation_time(self):
