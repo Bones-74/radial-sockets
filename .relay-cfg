@@ -18,24 +18,24 @@ socket
 {
   name hall01
   board b1
-  channel 02
+  channel 08
   sense active-low
   monitor_socket
   {
      board b1
-     channel 00
+     channel 04
      sense active-low
   }
   monitor_hw_ovr_on
   {
      board b1
-     channel 04
+     channel 05
   }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
   states
-  [  
+  [
     #0 on @  06:00
     #1 off @  08:00
     #3 on @  19:00
@@ -44,12 +44,12 @@ socket
     1 off @  sr+00:30
     2 on @  ss-00:30
     3 off @  23:00
-    #0 on @  sr - 00:30 if after 07:15        
+    #0 on @  sr - 00:30 if after 07:15
     #1 on @ 07:15 if after sr - 00:30
-    #2 off @  sr + 00:30 if before 08:00        
+    #2 off @  sr + 00:30 if before 08:00
     #3 off @ 08:00 if before sr + 00:30
-    #4 on @  ss - 00:30~00:05 if after 17:00        
-    #5 off @  17:00  if after ss - 00:30~00:05 
+    #4 on @  ss - 00:30~00:05 if after 17:00
+    #5 off @  17:00  if after ss - 00:30~00:05
   ]
 }
 
@@ -57,43 +57,12 @@ socket
 {
   name snug02
   board b1
-  channel 03
-  sense active-low
-  monitor_socket
-  {
-     board b1
-     channel 01
-     sense active-low
-  }
-  monitor_hw_ovr_on
-  {
-     board b1
-     channel 05
-     sense active-low
-  }
-  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
-  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
-  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
-  states
-  [  
-       0 off @ sr+00:30 if before 08:00
-       1 off @ 08:00 if before sr+00:30
-       2 on @  ss-00:30 if after 17:00
-       3 on @  17:00 if after ss-00:30
-  ]
-}
-
-socket
-{
-  name frnt03
-  board b1
   channel 09
   sense active-low
   monitor_socket
   {
      board b1
-     #channel 3
-     channel 11
+     channel 06
      sense active-low
   }
   monitor_hw_ovr_on
@@ -106,7 +75,38 @@ socket
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
   states
-  [  
+  [
+       0 off @ sr+00:30 if before 08:00
+       1 off @ 08:00 if before sr+00:30
+       2 on @  ss-00:30 if after 17:00
+       3 on @  17:00 if after ss-00:30
+  ]
+}
+
+socket
+{
+  name frnt03
+  board b1
+  channel 10
+  sense active-low
+  monitor_socket
+  {
+     board b1
+     #channel 3
+     channel 15
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     channel 01
+     sense active-low
+  }
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [
        0 on @ 07:15 if before sr+00:30
        1 on @ sr-00:30 if after 07:15
        2 off @ sr+00:30 if before 08:00
@@ -122,26 +122,26 @@ socket
 {
   name gdn04
   board b1
-  channel 08
+  channel 11
   sense active-low
   monitor_socket
   {
      board b1
-     channel 10
+     channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
      board b1
      #channel 10
-     channel 06
+     channel 02
      sense active-low
   }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
   states
-  [  
+  [
        0 on @ sr-00:30
        1 off @ sr+00:30
        #2 on @ 15:00
@@ -154,3 +154,4 @@ socket
        #5 off @ 15:30
   ]
 }
+
