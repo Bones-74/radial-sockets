@@ -17,7 +17,8 @@ class Control(object):
         self.run_event.set()
         # Restart the timer to cause the next timer event
         # to allow the event to be set
-        self.schedule_run(self.timer_val)
+        if not self.exit_now:
+            self.schedule_run(self.timer_val)
 
     def schedule_run(self, timer_val):
         self.timer_val = timer_val

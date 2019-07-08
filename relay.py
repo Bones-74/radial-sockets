@@ -14,6 +14,17 @@ from control import Control
 #from time import sleep
 from webserver.webserver_01 import web_svr, webserver_set_config_status
 
+# ############################################################
+# ############debugging start#################################
+# ############################################################
+sys.path.append(r'/home/pi/pysrc')
+import pydevd
+pydevd.settrace('192.168.1.65') # replace IP with address
+                                # of Eclipse host machine
+# ############################################################
+# ############debugging end##################################
+# ############################################################
+
 class relay_exit_codes():
     EXIT_CODE_OK = 0
     EXIT_CODE_ERROR_WITH_CONFIG_FILE = -1
@@ -93,8 +104,9 @@ def process_args(args=None):
 def read_input_files(cfg_fn, sts_fn):
     # read the config and status files
     try:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        full_path = dir_path + '/' + cfg_fn
+        #dir_path = os.path.dirname(os.path.realpath(__file__))
+        #full_path = dir_path + '/' + cfg_fn
+        full_path = cfg_fn
         with open(full_path) as f:
             config = f.readlines()
         config = [x.strip() for x in config]
@@ -102,7 +114,8 @@ def read_input_files(cfg_fn, sts_fn):
         config = None
 
     try:
-        full_path = dir_path + '/' + sts_fn
+        #full_path = dir_path + '/' + sts_fn
+        full_path = sts_fn
         with open(full_path) as f:
             status = f.readlines()
         status = [x.strip() for x in status]
@@ -394,8 +407,9 @@ def relay_process(control, config, status, overrides, socket_name=None):
         if control.simulate_run:
             deactivate_test_time()
         else:
-            dir_path = os.path.dirname(os.path.realpath(__file__))
-            full_path = dir_path + '/' + ".relay-sts"
+            #dir_path = os.path.dirname(os.path.realpath(__file__))
+            #full_path = dir_path + '/' + ".relay-sts"
+            full_path = ".relay-sts"
             status.write_file (full_path)
 
     except:
@@ -528,16 +542,17 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
     set_location_coords (config.app.coords)
     ret_code = relay_process(control, config, status, new_overrides)
     if ret_code:
-        return ret_code
+        return ret_code, None
 
     # re-write the status file
     if status_file:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        full_path = dir_path + '/' + status_file
+        #dir_path = os.path.dirname(os.path.realpath(__file__))
+        full_path = status_file
+        #full_path = dir_path + '/' + status_file
         status.write_file (full_path)
 
     # configure & start thread to monitor board inputs
-    thread = threading.Thread(target=update_board_inputs,args=(config, status))
+    thread = threading.Thread(target=update_board_inputs,args=(control, config, status))
     thread.start()
 
     # Now see if we want to run the app continously
@@ -565,17 +580,16 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
             thread.start()
 
     if args.super_time:
-        st_args = []
-        st_args.append(args.super_time)
+        st_args = [control, args.super_time]
         st_thread = threading.Thread(target=supertime_change_time,args=st_args)
         st_thread.start()
 
-    return relay_exit_codes.EXIT_CODE_OK
+    return relay_exit_codes.EXIT_CODE_OK, control
 
-def supertime_change_time(mins_per_sec):
+def supertime_change_time(control, mins_per_sec):
     accelleration_per_second = timedelta(minutes=mins_per_sec)
     timenow = time_now()
-    while True:
+    while not control.exit_now:
         sleep(1)
         timenow += accelleration_per_second
         activate_test_time(timenow)
@@ -595,8 +609,8 @@ def main__run_from_scheduler(control, config, status):
 
     return err_code
 
-def update_board_inputs(config, status):
-    while True:
+def update_board_inputs(control, config, status):
+    while not control.exit_now:
         for _board_name, board in config.boards.items():
             board.update_live_status()
 
@@ -616,5 +630,9 @@ def update_board_inputs(config, status):
 
 
 if __name__ == "__main__":
-    err_code = main__1st_run_from_commandline(args=sys.argv[1:])
+    err_code, control = main__1st_run_from_commandline(args=sys.argv[1:])
+    quit = False
+    while not control.exit_now:
+        sleep(10)
+
     print ("exit({})".format(err_code))
