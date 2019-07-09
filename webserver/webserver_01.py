@@ -37,7 +37,8 @@ class relay_webserver(Flask):
     def index(self):
         for _key,_value in self.config.items():
             pass
-        return render_template('table.html', name="arshole")
+        return render_template('table.html', name="arshole")
+
     def set_config_status (self, config, status):
         self.config = config
         self.status = status
