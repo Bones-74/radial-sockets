@@ -8,9 +8,15 @@ from .board_interface import BoardInterface, NOT_IMPLEMENTED
 
 model_name = "ada_ft232h"
 
+# pin d0-d7 channels 0-7
+# pin c0-c7 channels 8-15
+
 class ada_ft232h(BoardInterface):
     def __init__(self, bname, bport, num_channels):
         super(ada_ft232h,self).__init__(bname, bport, num_channels)
+
+        #FT232H.enumerate_device_serials()
+
         # Temporarily disable the built-in FTDI serial driver on Mac & Linux platforms.
         FT232H.use_FT232H()
 
@@ -19,6 +25,11 @@ class ada_ft232h(BoardInterface):
 
         self.channel_dirs = dict()
         self.channel_sense = dict()
+        self.channel_configured = dict()
+
+        # initialise all gpio as inputs first of all
+        for pin in range(0,16):
+            self.ft232h.setup(pin, GPIO.IN)  # Make pin a digital input
 
 
     def addChannel(self, channel, sense, direction):
@@ -26,7 +37,9 @@ class ada_ft232h(BoardInterface):
             return BoardInterface.CHANNEL_ALREADY_ASSIGNED
 
         self.channel_dirs [channel] = direction
-        self.channel_sense  [channel] = sense
+        self.channel_sense [channel] = sense
+        self.channel_configured [channel] = False
+
         return BoardInterface.ALL_OK
 
     def configure(self):
@@ -60,12 +73,19 @@ class ada_ft232h(BoardInterface):
         return self.current_status
 
     def setRelay (self, new_status, channel):
-        if self.channel_sense [channel] == BoardInterface.ACTIVE_LOW:
-            # Need to invert status
-            new_status = not new_status
+        if channel in self.channel_sense:
+            if self.channel_sense [channel] == BoardInterface.ACTIVE_LOW:
+                # Need to invert status
+                new_status = not new_status
 
         self.ft232h.output(channel, new_status)
-        return NOT_IMPLEMENTED
+
+        # Only configure outputs after teh first value has been received to prevent
+        # relay from being flipped on then off during initialisation.
+        if channel in self.channel_configured:
+            if not self.channel_configured [channel]:
+                if self.channel_dirs [channel] == BoardInterface.CHANNEL_OUTPUT:
+                    self.ft232h.setup(channel, GPIO.OUT)  # Make pin C0 a digital output.
 
     def getRelay (self, channel):
         self.getCurrentStatus();

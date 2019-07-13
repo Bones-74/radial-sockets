@@ -97,12 +97,12 @@ class Board(object):
             else:
                 pass
         except RuntimeError:
-            pass
+            raise
 
     def add_channel(self,channel, sense, direction):
         return self.board_comms.addChannel(channel, sense, direction)
 
-    def init (self):
+    def configure (self):
         self.board_comms.configure()
 
     @staticmethod
@@ -131,7 +131,7 @@ class Board(object):
         return self.board_comms.getRelay(relay_idx)
 
     def set_relay_state (self, new_status, relay_idx):
-        return self.board_comms.setRelay(new_status, relay_idx)
+        self.board_comms.setRelay(new_status, relay_idx)
 
 
 class Monitor(object):
@@ -366,8 +366,8 @@ class Config(object):
             if ret1 or ret2 or ret3:
                 return self.CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED
 
-        for _board_name, board in self.boards.items():
-            board.init()
+#        for _board_name, board in self.boards.items():
+#            board.init()
 
         return self.CONFIG_OK
 

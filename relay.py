@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import argparse
@@ -17,9 +19,11 @@ from webserver.webserver_01 import web_svr, webserver_set_config_status
 # ############################################################
 # ############debugging start#################################
 # ############################################################
-sys.path.append(r'/home/pi/pysrc')
-import pydevd
-pydevd.settrace('192.168.1.65') # replace IP with address
+DEBUG=False
+if DEBUG:
+    sys.path.append(r'/home/pi/pysrc')
+    import pydevd
+    pydevd.settrace('192.168.1.65') # replace IP with address
                                 # of Eclipse host machine
 # ############################################################
 # ############debugging end##################################
@@ -285,65 +289,61 @@ def send_next_statuses (control, socket_cfg, socket_sts, board):
     # value to the board- if it's different it'll change and if the
     # same, well, nothing will happen
     timenow = control.time
-#    for socket_name, socket in config.sockets.items():
-    if True:
-#        skt_sts = status.sockets[socket_name]
 
-        # If there is an override, then adjust the new_pwr_status accordingly
-        if socket_sts.ovr_sts == OverrideStatus.OVR_INACTIVE:
+    # If there is an override, then adjust the new_pwr_status accordingly
+    if socket_sts.ovr_sts == OverrideStatus.OVR_INACTIVE:
+        new_pwr_status = socket_sts.calcd_auto_sts
+
+    elif socket_sts.ovr_sts == OverrideStatus.OVR_SESSION_OFF:
+        if socket_sts.calcd_state == socket_sts.ovr_session_state:
+            new_pwr_status = PowerStatus.PWR_OFF
+        else:
+            # drop out of session override and use the calcd power state,
+            # which is normally the same as the session override
+            socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
             new_pwr_status = socket_sts.calcd_auto_sts
 
-        elif socket_sts.ovr_sts == OverrideStatus.OVR_SESSION_OFF:
-            if socket_sts.calcd_state == socket_sts.ovr_session_state:
-                new_pwr_status = PowerStatus.PWR_OFF
-            else:
-                # drop out of session override and use the calcd power state,
-                # which is normally the same as the session override
-                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                new_pwr_status = socket_sts.calcd_auto_sts
-
-        elif socket_sts.ovr_sts == OverrideStatus.OVR_SESSION_ON:
-            if socket_sts.calcd_state == socket_sts.ovr_session_state:
-                new_pwr_status = PowerStatus.PWR_ON
-            else:
-                # drop out of session override and use the calcd power state,
-                # which is normally the same as the session override
-                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                new_pwr_status = socket_sts.calcd_auto_sts
-
-        elif socket_sts.ovr_sts == OverrideStatus.OVR_FORCE_OFF:
-            new_pwr_status = PowerStatus.PWR_OFF
-
-        elif socket_sts.ovr_sts == OverrideStatus.OVR_FORCE_ON:
+    elif socket_sts.ovr_sts == OverrideStatus.OVR_SESSION_ON:
+        if socket_sts.calcd_state == socket_sts.ovr_session_state:
             new_pwr_status = PowerStatus.PWR_ON
+        else:
+            # drop out of session override and use the calcd power state,
+            # which is normally the same as the session override
+            socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+            new_pwr_status = socket_sts.calcd_auto_sts
 
-        elif socket_sts.ovr_sts == OverrideStatus.OVR_ON_UNTIL:
-            if timenow < socket_sts.ovr_t_until:
-                new_pwr_status = PowerStatus.PWR_ON
-            else:
-                new_pwr_status = socket_sts.calcd_auto_sts
-                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                socket_sts.ovr_t_until = None
+    elif socket_sts.ovr_sts == OverrideStatus.OVR_FORCE_OFF:
+        new_pwr_status = PowerStatus.PWR_OFF
 
-        elif socket_sts.ovr_sts == OverrideStatus.OVR_OFF_UNTIL:
-            if timenow < socket_sts.ovr_t_until:
-                new_pwr_status = PowerStatus.PWR_OFF
-            else:
-                new_pwr_status = socket_sts.calcd_auto_sts
-                socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
-                socket_sts.ovr_t_until = None
+    elif socket_sts.ovr_sts == OverrideStatus.OVR_FORCE_ON:
+        new_pwr_status = PowerStatus.PWR_ON
+
+    elif socket_sts.ovr_sts == OverrideStatus.OVR_ON_UNTIL:
+        if timenow < socket_sts.ovr_t_until:
+            new_pwr_status = PowerStatus.PWR_ON
+        else:
+            new_pwr_status = socket_sts.calcd_auto_sts
+            socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+            socket_sts.ovr_t_until = None
+
+    elif socket_sts.ovr_sts == OverrideStatus.OVR_OFF_UNTIL:
+        if timenow < socket_sts.ovr_t_until:
+            new_pwr_status = PowerStatus.PWR_OFF
+        else:
+            new_pwr_status = socket_sts.calcd_auto_sts
+            socket_sts.ovr_sts = OverrideStatus.OVR_INACTIVE
+            socket_sts.ovr_t_until = None
 
 
-        if socket_sts.actual_pwr != new_pwr_status:
-            pwr_history = socket_sts.history["pwr"]
-            pwr_history.append((timenow, new_pwr_status))
-            socket_sts.actual_pwr = new_pwr_status
-            if socket_sts.name == "hall03":
-                print ("{0}: {1}".format(timenow, new_pwr_status))
+    if socket_sts.actual_pwr != new_pwr_status:
+        pwr_history = socket_sts.history["pwr"]
+        pwr_history.append((timenow, new_pwr_status))
+        socket_sts.actual_pwr = new_pwr_status
+        if socket_sts.name == "hall03":
+            print ("{0}: {1}".format(timenow, new_pwr_status))
 
-        if not control.simulate_run:
-#            board = config.boards[socket.board]
-            board.set_relay_state(new_pwr_status, socket_cfg.channel)
+    if not control.simulate_run:
+        board.set_relay_state(new_pwr_status, socket_cfg.channel)
 
 
 sem = threading.Semaphore()
@@ -409,8 +409,9 @@ def relay_process(control, config, status, overrides, socket_name=None):
         else:
             #dir_path = os.path.dirname(os.path.realpath(__file__))
             #full_path = dir_path + '/' + ".relay-sts"
-            full_path = ".relay-sts"
-            status.write_file (full_path)
+            #full_path = ".relay-sts"
+            #status.write_file (full_path)
+            status.write_file ()
 
     except:
         exit_code =  relay_exit_codes.EXIT_CODE_PROCESSING_RELAY_ERROR
@@ -514,7 +515,9 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
 
     # Process the input information
     config, status = parse_input_info(cfg_arr, sts_arr)
-    if config == None:
+    if config:
+        config.filename = config_file
+    else:
         print("Parse issue with Config file {} please check and try again".format(config_file))
         return relay_exit_codes.EXIT_CODE_ERROR_WITH_CONFIG_FILE, None
 
@@ -523,7 +526,9 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
     if app_exit_code != relay_exit_codes.EXIT_CODE_OK:
         return app_exit_code, None
 
-    if status == None:
+    if status:
+        status.filename = status_file
+    else:
         print("Proceeding with no status file (will create at end)")
         # create status structure for each socket
         status = Status()
@@ -535,7 +540,7 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
     validation_res, text = validate_args(new_overrides, config)
     if validation_res == relay_exit_codes.EXIT_CODE_CMDLINE_ERROR_UNRECOGNISED_SOCKET:
         print("Unrecognised socket {} in commandline".format(text))
-        return validation_res, None
+        return validationfilename_res, None
 
     # now take the info read from the config and status files and process the info
     control = Control()
@@ -545,11 +550,12 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
         return ret_code, None
 
     # re-write the status file
-    if status_file:
-        #dir_path = os.path.dirname(os.path.realpath(__file__))
-        full_path = status_file
-        #full_path = dir_path + '/' + status_file
-        status.write_file (full_path)
+    status.write_file ()
+#    if status_file:
+#        #dir_path = os.path.dirname(os.path.realpath(__file__))
+#        full_path = status_file
+#        #full_path = dir_path + '/' + status_file
+#        status.write_file (full_path)
 
     # configure & start thread to monitor board inputs
     thread = threading.Thread(target=update_board_inputs,args=(control, config, status))
