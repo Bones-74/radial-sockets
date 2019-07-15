@@ -16,7 +16,7 @@ board
 
 socket
 {
-  name hall01
+  name SnugLHS
   board b1
   channel 08
   sense active-low
@@ -36,26 +36,14 @@ socket
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
   states
   [
-    #0 on @  06:00
-    #1 off @  08:00
-    #3 on @  19:00
-    #4 off @  23:00
-    0 on @  sr-00:30
-    1 off @  sr+00:30
-    2 on @  ss-00:30
-    3 off @  23:00
-    #0 on @  sr - 00:30 if after 07:15
-    #1 on @ 07:15 if after sr - 00:30
-    #2 off @  sr + 00:30 if before 08:00
-    #3 off @ 08:00 if before sr + 00:30
-    #4 on @  ss - 00:30~00:05 if after 17:00
-    #5 off @  17:00  if after ss - 00:30~00:05
+    0 on @  ss-00:30
+    1 off @  23:50
   ]
 }
 
 socket
 {
-  name snug02
+  name SnugRHS
   board b1
   channel 09
   sense active-low
@@ -76,10 +64,13 @@ socket
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
   states
   [
-       0 off @ sr+00:30 if before 08:00
-       1 off @ 08:00 if before sr+00:30
-       2 on @  ss-00:30 if after 17:00
-       3 on @  17:00 if after ss-00:30
+
+    0 on @  ss-00:30
+    1 off @  23:50
+       #0 off @ sr+00:30 if before 08:00
+       #1 off @ 08:00 if before sr+00:30
+       #2 on @  ss-00:30 if after 17:00
+       #3 on @  17:00 if after ss-00:30
   ]
 }
 

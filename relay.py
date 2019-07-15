@@ -531,7 +531,7 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
     else:
         print("Proceeding with no status file (will create at end)")
         # create status structure for each socket
-        status = Status()
+        status = Status(status_file)
 
     # process the override comandline options
     new_overrides = process_arg_overrides(args)

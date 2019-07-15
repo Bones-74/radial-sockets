@@ -191,9 +191,9 @@ class SocketStatus(object):
 
 
 class Status(object):
-    def __init__(self):
+    def __init__(self,fn=None):
         self.sockets = {}
-        self.filename = None
+        self.filename = fn
 
     def clone(self):
         sts_ = Status()
@@ -239,7 +239,7 @@ class Status(object):
         # backup_fn = filename + ".bak"
         # shutil.move(filename, 'b.kml')
         print("filename = '{}'".format(filename))
-        with open(filename, "w") as fp:
+        with open(filename, "w+") as fp:
             for _socket_name, socket in self.sockets.items():
                 fp.write(socket.name)
                 fp.write("\n")
