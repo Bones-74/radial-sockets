@@ -19,7 +19,7 @@ from webserver.webserver_01 import web_svr, webserver_set_config_status
 # ############################################################
 # ############debugging start#################################
 # ############################################################
-DEBUG=False
+DEBUG=True
 if DEBUG:
     sys.path.append(r'/home/pi/pysrc')
     import pydevd
@@ -343,7 +343,7 @@ def send_next_statuses (control, socket_cfg, socket_sts, board):
             print ("{0}: {1}".format(timenow, new_pwr_status))
 
     if not control.simulate_run:
-        board.set_relay_state(new_pwr_status, socket_cfg.channel)
+        board.set_relay_state(new_pwr_status, socket_cfg.control_pwr.channel)
 
 
 sem = threading.Semaphore()
@@ -389,7 +389,7 @@ def relay_process(control, config, status, overrides, socket_name=None):
             # Calc the auto-values, ignoring override states
             socket_cfg.calc_status(socket_sts, control.time)
             # Send the next set of values to the boards, taking the overrides into account
-            send_next_statuses (control, socket_cfg, socket_sts, config.boards[socket_cfg.board])
+            send_next_statuses (control, socket_cfg, socket_sts, config.boards[socket_cfg.control_pwr.board])
         else:
             # iterate through all sockets
             for socket_name, socket_cfg in config.sockets.items():
@@ -400,7 +400,7 @@ def relay_process(control, config, status, overrides, socket_name=None):
                 socket_sts = status.sockets[socket_name]
                 # Calc the auto-values, ignoring override states
                 socket_cfg.calc_status(socket_sts, control.time)
-                send_next_statuses (control, socket_cfg, socket_sts, config.boards[socket_cfg.board])
+                send_next_statuses (control, socket_cfg, socket_sts, config.boards[socket_cfg.control_pwr.board])
 
 
         # re-write the status file

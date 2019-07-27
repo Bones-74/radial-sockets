@@ -32,13 +32,13 @@ class ada_ft232h(BoardInterface):
             self.ft232h.setup(pin, GPIO.IN)  # Make pin a digital input
 
 
-    def addChannel(self, channel, sense, direction):
-        if channel in self.channel_dirs:
+    def addChannel(self, gpio, direction):
+        if gpio.channel in self.channel_dirs:
             return BoardInterface.CHANNEL_ALREADY_ASSIGNED
 
-        self.channel_dirs [channel] = direction
-        self.channel_sense [channel] = sense
-        self.channel_configured [channel] = False
+        self.channel_dirs [gpio.channel] = direction
+        self.channel_sense [gpio.channel] = gpio.sense
+        self.channel_configured [gpio.channel] = False
 
         return BoardInterface.ALL_OK
 

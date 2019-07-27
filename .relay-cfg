@@ -17,9 +17,12 @@ board
 socket
 {
   name SnugLHS
-  board b1
-  channel 08
-  sense active-low
+  control_pwr
+  {
+     board b1
+     channel 08
+     sense active-low
+  }
   monitor_socket
   {
      board b1
@@ -44,9 +47,12 @@ socket
 socket
 {
   name SnugRHS
-  board b1
-  channel 09
-  sense active-low
+  control_pwr
+  {
+     board b1
+     channel 09
+     sense active-low
+  }
   monitor_socket
   {
      board b1
@@ -77,9 +83,12 @@ socket
 socket
 {
   name frnt03
-  board b1
-  channel 10
-  sense active-low
+  control_pwr
+  {
+     board b1
+     channel 10
+     sense active-low
+  }
   monitor_socket
   {
      board b1
@@ -112,9 +121,12 @@ socket
 socket
 {
   name gdn04
-  board b1
-  channel 11
-  sense active-low
+  control_pwr
+  {
+     board b1
+     channel 11
+     sense active-low
+  }
   monitor_socket
   {
      board b1

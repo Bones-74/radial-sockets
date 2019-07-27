@@ -4,18 +4,18 @@ SnugRHS
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
-  override-status session-on
+  override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
-  override-session-state 1
+  override-session-state -1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
   override-t-until None
 }
 
 gdn04
 {
-  state 2
+  state 1
   # [on/off]
-  auto-status  on
+  auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
@@ -30,9 +30,9 @@ SnugLHS
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
-  override-status session-on
+  override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
-  override-session-state 1
+  override-session-state -1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
   override-t-until None
 }

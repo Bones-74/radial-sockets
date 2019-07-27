@@ -24,13 +24,9 @@ class config_kw():
 
     SOCKET_KW = 'socket'
     SOCKET_NAME_KW = 'name'
-    SOCKET_BOARD_KW = 'board'
-    SOCKET_CHANNEL_KW = 'channel'
+    SOCKET_CONTROL_PWR_KW = 'control_pwr'
     SOCKET_MONITOR_OVR_ON_KW = 'monitor_hw_ovr_on'
     SOCKET_MONITOR_PWR_KW = 'monitor_socket'
-    SOCKET_SENSE_KW = "sense"
-    SOCKET_SENSE_ACTIVE_LOW_KW = "active-low"
-    SOCKET_SENSE_ACTIVE_HIGH_KW = "active-high"
 
     STATES_KW = 'states'
 
@@ -99,8 +95,8 @@ class Board(object):
         except RuntimeError:
             raise
 
-    def add_channel(self,channel, sense, direction):
-        return self.board_comms.addChannel(channel, sense, direction)
+    def add_channel(self, gpio, direction):
+        return self.board_comms.addChannel(gpio, direction)
 
     def configure (self):
         self.board_comms.configure()
@@ -134,27 +130,53 @@ class Board(object):
         self.board_comms.setRelay(new_status, relay_idx)
 
 
-class Monitor(object):
+class GPIO(object):
     ACTIVE_LOW = 0
     ACTIVE_HIGH = 0
+
+    GPIO_BOARD_KW = 'board'
+    GPIO_CHANNEL_KW = 'channel'
+    GPIO_SENSE_KW = "sense"
+    GPIO_SENSE_ACTIVE_LOW_KW = "active-low"
+    GPIO_SENSE_ACTIVE_HIGH_KW = "active-high"
 
     def __init__(self):
         self.board = ""
         self.channel = -1
-        self.sense = Monitor.ACTIVE_LOW
+        self.sense = GPIO.ACTIVE_LOW
+
+    @staticmethod
+    def parse_gpio (gpio_txt):
+        gpio_board = Socket.SKT_MISSING_TXT
+        gpio_channel = Socket.SKT_MISSING_INT
+        gpio_sense = Socket.SKT_MISSING_INT
+        gpio = GPIO()
+        for line in gpio_txt:
+            line_parts = line.split()
+            if line_parts[0].strip() == GPIO.GPIO_BOARD_KW:
+                gpio_board = line_parts[1].strip()
+                gpio.board = gpio_board
+            elif line_parts[0].strip() == GPIO.GPIO_CHANNEL_KW:
+                gpio_channel = int(line_parts[1].strip())
+                gpio.channel = gpio_channel
+            elif line_parts[0].strip() == GPIO.GPIO_SENSE_KW:
+                if line_parts[1].strip() == GPIO.GPIO_SENSE_ACTIVE_LOW_KW:
+                    gpio_sense = GPIO.ACTIVE_LOW
+                else:
+                    gpio_sense = GPIO.ACTIVE_HIGH
+                gpio.sense = gpio_sense
+        return gpio
 
 
 class Socket(object):
     SKT_MISSING_TXT = "**missing**"
     SKT_MISSING_INT = -1
 
-    def __init__(self, name, board, channel, sense=Monitor.ACTIVE_HIGH):
+    def __init__(self, name):
         self.name = name
-        self.board = board
-        self.channel = channel
-        self.sense = sense
         self.mon_ovr_on = {}
         self.mon_auto_on = {}
+        self.control_pwr = {}
 
         #self.current_state = STATE_NOT_ASSIGNED
         #self.current_pwr_state = STATE_NOT_ASSIGNED
@@ -166,64 +188,23 @@ class Socket(object):
     @staticmethod
     def parse_socket (state_def):
         skt_name = Socket.SKT_MISSING_TXT
-        skt_board = Socket.SKT_MISSING_TXT
-        skt_channel = Socket.SKT_MISSING_INT
-        skt_sense = Socket.SKT_MISSING_INT
         for line in state_def:
             line_parts = line.split()
             if line_parts[0].strip() == config_kw.SOCKET_NAME_KW:
                 skt_name = line_parts[1].strip()
-            elif line_parts[0].strip() == config_kw.SOCKET_BOARD_KW:
-                skt_board = line_parts[1].strip()
-            elif line_parts[0].strip() == config_kw.SOCKET_CHANNEL_KW:
-                skt_channel = int(line_parts[1].strip())
-            elif line_parts[0].strip() == config_kw.SOCKET_SENSE_KW:
-                if line_parts[1].strip() == config_kw.SOCKET_SENSE_ACTIVE_LOW_KW:
-                    skt_sense = Monitor.ACTIVE_LOW
-                else:
-                    skt_sense = Monitor.ACTIVE_HIGH
 
-        skt = Socket(skt_name, skt_board, skt_channel, skt_sense)
+        skt = Socket(skt_name)
         return skt
 
     def add_states (self, states):
         self.states = states
 
-    def add_monitors(self, monitor_skts, monitor_ovr_on):
+    def add_monitor_gpio(self, monitor_skts, monitor_ovr_on):
         self.mon_ovr_on = monitor_ovr_on
         self.mon_auto_on = monitor_skts
 
-    @staticmethod
-    def parse_monitor_skt(mon_skt_txt):
-        monitor = Socket.parse_monitor (mon_skt_txt)
-        return monitor
-
-    @staticmethod
-    def parse_monitor (mon_txt):
-        mon_board = Socket.SKT_MISSING_TXT
-        mon_channel = Socket.SKT_MISSING_INT
-        mon_sense = Socket.SKT_MISSING_INT
-        monitor = Monitor()
-        for line in mon_txt:
-            line_parts = line.split()
-            if line_parts[0].strip() == config_kw.SOCKET_BOARD_KW:
-                mon_board = line_parts[1].strip()
-                monitor.board = mon_board
-            elif line_parts[0].strip() == config_kw.SOCKET_CHANNEL_KW:
-                mon_channel = int(line_parts[1].strip())
-                monitor.channel = mon_channel
-            elif line_parts[0].strip() == config_kw.SOCKET_SENSE_KW:
-                if line_parts[1].strip() == config_kw.SOCKET_SENSE_ACTIVE_LOW_KW:
-                    mon_sense = Monitor.ACTIVE_LOW
-                else:
-                    mon_sense = Monitor.ACTIVE_HIGH
-                monitor.sense = mon_sense
-        return monitor
-
-    @staticmethod
-    def parse_monitor_ovr_on(mon_skt_txt):
-        monitor = Socket.parse_monitor (mon_skt_txt)
-        return monitor
+    def add_control_pwr_gpio(self, control_pwr):
+        self.control_pwr = control_pwr
 
     def calc_status(self, skt_status, timenow):
         # using the current status of the socket, as read from the status file,
@@ -258,7 +239,7 @@ class Socket(object):
 
 
     def clone (self):
-        skt_ = Socket (self.name, self.board, self.channel, self.sense)
+        skt_ = Socket (self.name)
         states_ = []
         for skt_state in self.states:
             states_.append(skt_state.clone())
@@ -356,12 +337,13 @@ class Config(object):
 
     def init(self):
         for _socket_name, socket in self.sockets.items():
-            ret1 = ret2 = ret3 = 0
-            ret1 = self.boards[socket.board].add_channel(socket.channel, socket.sense, board_interface.BoardInterface.CHANNEL_OUTPUT)
+            ret2 = ret3 = 0
+            ret1 = self.boards[socket.control_pwr.board].add_channel(socket.control_pwr, board_interface.BoardInterface.CHANNEL_OUTPUT)
+            #ret1 = self.boards[socket.board].add_channel(socket.channel, socket.sense, board_interface.BoardInterface.CHANNEL_OUTPUT)
             if socket.mon_ovr_on:
-                ret2 = self.boards[socket.mon_ovr_on.board].add_channel(socket.mon_ovr_on.channel, socket.mon_ovr_on.sense, board_interface.BoardInterface.CHANNEL_INPUT)
+                ret2 = self.boards[socket.mon_ovr_on.board].add_channel(socket.mon_ovr_on, board_interface.BoardInterface.CHANNEL_INPUT)
             if socket.mon_auto_on:
-                ret3 = self.boards[socket.mon_auto_on.board].add_channel(socket.mon_auto_on.channel, socket.mon_auto_on.sense, board_interface.BoardInterface.CHANNEL_INPUT)
+                ret3 = self.boards[socket.mon_auto_on.board].add_channel(socket.mon_auto_on, board_interface.BoardInterface.CHANNEL_INPUT)
 
             if ret1 or ret2 or ret3:
                 return self.CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED
@@ -399,11 +381,9 @@ class Config(object):
         for skt_name, skt in self.sockets.items():
             if skt_name is Socket.SKT_MISSING_TXT:
                 return self.CONFIG_ERROR_SOCKET_NAME_NOT_DEFINED, skt_name
-            if skt.name is Socket.SKT_MISSING_TXT:
-                return self.CONFIG_ERROR_SOCKET_NAME_NOT_DEFINED, skt_name
-            if skt.board is Socket.SKT_MISSING_TXT:
+            if skt.control_pwr.board is Socket.SKT_MISSING_TXT:
                 return self.CONFIG_ERROR_SOCKET_BOARD_NOT_DEFINED, skt_name
-            if skt.channel is Socket.SKT_MISSING_TXT:
+            if skt.control_pwr.channel is Socket.SKT_MISSING_TXT:
                 return self.CONFIG_ERROR_SOCKET_CHANNEL_NOT_DEFINED, skt_name
             if skt.states is None:
                 return self.CONFIG_ERROR_SOCKET_STATES_MISSING, skt_name
@@ -411,13 +391,23 @@ class Config(object):
                 return self.CONFIG_ERROR_SOCKET_STATES_EMPTY, skt_name
 
             # check all boards that are referenced are defined
-            if skt.board not in self.boards:
+            if skt.control_pwr.board not in self.boards:
+                return self.CONFIG_ERROR_BOARD_NOT_DEFINED, skt.board + " in " + skt_name
+            if skt.mon_ovr_on.board not in self.boards:
+                return self.CONFIG_ERROR_BOARD_NOT_DEFINED, skt.board + " in " + skt_name
+            if skt.mon_auto_on.board not in self.boards:
                 return self.CONFIG_ERROR_BOARD_NOT_DEFINED, skt.board + " in " + skt_name
 
             # check that the channel id is within the channel range for the referenced board
-            board = self.boards[skt.board]
-            if skt.channel < 0 or skt.channel> board.num_channels:
-                return self.CONFIG_ERROR_SOCKET_CHANNEL_NUM_OUT_OF_RANGE, "channel {} in {} on {}".format(skt.channel, skt_name, skt.board)
+            board = self.boards[skt.control_pwr.board]
+            if skt.control_pwr.channel < 0 or skt.control_pwr.channel > board.num_channels:
+                return self.CONFIG_ERROR_SOCKET_CHANNEL_NUM_OUT_OF_RANGE, "channel {} in {} on {}".format(skt.control_pwr.channel, skt_name, skt.control_pwr.board)
+            board = self.boards[skt.mon_ovr_on.board]
+            if skt.mon_ovr_on.channel < 0 or skt.mon_ovr_on.channel > board.num_channels:
+                return self.CONFIG_ERROR_SOCKET_CHANNEL_NUM_OUT_OF_RANGE, "channel {} in {} on {}".format(skt.mon_ovr_on.channel, skt_name, skt.mon_ovr_on.board)
+            board = self.boards[skt.mon_auto_on.board]
+            if skt.mon_auto_on.channel < 0 or skt.mon_auto_on.channel> board.num_channels:
+                return self.CONFIG_ERROR_SOCKET_CHANNEL_NUM_OUT_OF_RANGE, "channel {} in {} on {}".format(skt.mon_auto_on.channel, skt_name, skt.mon_auto_on.board)
 
             # check each state definition is correct
             for idx, state in enumerate(skt.states):
@@ -451,18 +441,21 @@ class Config(object):
         GET_SOCKET_STATES = 3
         GET_SOCKET_MONITOR_SKT = 4
         GET_SOCKET_MONITOR_OVR_ON_ = 5
-        GET_APP = 6
+        GET_SOCKET_CONTROL_PWR = 6
+        GET_APP = 7
 
         config = Config()
         states = {}
         monitor_skts = None
         monitor_ovr_on = None
+        control_pwr = None
 
         app_text = []
         board_text = []
         socket_text = []
         monitor_skts_text = []
         monitor_ovr_on_text = []
+        control_pwr_gpio_text =[]
         state = FIND_TYPE
         for line in config_arr:
             line = line.strip()
@@ -500,13 +493,18 @@ class Config(object):
                     socket = Socket.parse_socket(socket_text)
                     socket.add_states(states)
                     config.add_socket(socket)
-                    socket.add_monitors(monitor_skts, monitor_ovr_on)
+                    socket.add_monitor_gpio(monitor_skts, monitor_ovr_on)
+                    socket.add_control_pwr_gpio(control_pwr)
                     monitor_skts = None
                     monitor_ovr_on = None
+                    control_pwr = None
                     state = FIND_TYPE
                 elif line == config_kw.STATES_KW:
                     states_text = []
                     state = GET_SOCKET_STATES
+                elif line == config_kw.SOCKET_CONTROL_PWR_KW:
+                    control_pwr_gpio_text = []
+                    state = GET_SOCKET_CONTROL_PWR
                 elif line == config_kw.SOCKET_MONITOR_OVR_ON_KW:
                     monitor_ovr_on_text = []
                     state = GET_SOCKET_MONITOR_OVR_ON_
@@ -524,23 +522,29 @@ class Config(object):
                 else:
                     states_text.append(line)
 
-            #elif line_parts[0].strip() == config_kw.SOCKET_MONITOR_OVR_ON_KW:
-            # #  skt_channel = int(line_parts[1].strip())
-            #elif line_parts[0].strip() == config_kw.SOCKET_MONITOR_PWR_KW:
-            #    skt_channel = int(line_parts[1].strip())
             elif state == GET_SOCKET_MONITOR_SKT:
                 if line == '{':
                     pass
                 elif line == '}':
-                    monitor_skts = Socket.parse_monitor_skt(monitor_skts_text)
+                    monitor_skts = GPIO.parse_gpio(monitor_skts_text)
                     state = GET_SOCKET
                 else:
                     monitor_skts_text.append(line)
+
+            elif state == GET_SOCKET_CONTROL_PWR:
+                if line == '{':
+                    pass
+                elif line == '}':
+                    control_pwr = GPIO.parse_gpio(control_pwr_gpio_text)
+                    state = GET_SOCKET
+                else:
+                    control_pwr_gpio_text.append(line)
+
             elif state == GET_SOCKET_MONITOR_OVR_ON_:
                 if line == '{':
                     pass
                 elif line == '}':
-                    monitor_ovr_on = Socket.parse_monitor_ovr_on(monitor_ovr_on_text)
+                    monitor_ovr_on = GPIO.parse_gpio(monitor_ovr_on_text)
                     state = GET_SOCKET
                 else:
                     monitor_ovr_on_text.append(line)

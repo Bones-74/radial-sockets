@@ -8,7 +8,7 @@ class SimBoard(BoardInterface):
 
         self.channels = [0] * num_channels
 
-    def addChannel(self, channel, sense, direction):
+    def addChannel(self, gpio, direction):
         return BoardInterface.ALL_OK
 
     def getCurrentStatus (self):

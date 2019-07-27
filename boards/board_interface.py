@@ -16,7 +16,7 @@ class BoardInterface(object):
         self.num_channels = num_channels
         self.current_status = 0x00
 
-    def addChannel(self, channel, sense, direction):
+    def addChannel(self, gpio, direction):
         return NOT_IMPLEMENTED
 
     def configure(self):
