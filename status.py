@@ -141,7 +141,9 @@ class SocketStatus(object):
         self.ovr_session_state = ovr_sess_state
         self.ovr_t_until = ovr_t_until
         self.sts_ovr_on = False
-        self.sts_auto_on = False
+        # Initialise to True, meaning we're on auto/pc control.  If the front-panel
+        # is connected, then this value will get updated.
+        self.sts_auto_on = True
         self.calcd_state = -1
         self.calcd_auto_sts = PowerStatus.PWR_OFF
 

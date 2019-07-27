@@ -557,9 +557,11 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
 #        #full_path = dir_path + '/' + status_file
 #        status.write_file (full_path)
 
-    # configure & start thread to monitor board inputs
-    thread = threading.Thread(target=update_board_inputs,args=(control, config, status))
-    thread.start()
+    # configure & start thread to monitor board inputs, only do this
+    # if the front panel is present
+    if config.app.front_panel_present:
+        thread = threading.Thread(target=update_board_inputs,args=(control, config, status))
+        thread.start()
 
     # Now see if we want to run the app continously
     if config.app:

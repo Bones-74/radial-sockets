@@ -3,6 +3,7 @@ app
   update_timer 10
   webserver_port 30080
   location -1.82:52.9
+  front-panel-present 1
 }
 
 board

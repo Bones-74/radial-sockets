@@ -15,6 +15,7 @@ class config_kw():
     APP_WEBSERVER_PORT = 'webserver_port'
     APP_SOCKET_PORT = 'socket_port'
     APP_LOCATION_COORDS = 'location'
+    APP_FRONT_PANEL_KW = 'front-panel-present'
 
     BOARD_KW = 'board'
     BOARD_NAME_KW = 'name'
@@ -37,13 +38,14 @@ class App(object):
     APP_DEFAULT_WEB_SERVER_PORT = 30080
     APP_MISSING_TXT = "**missing**"
     APP_MISSING_VALUE = -1
-    def __init__(self, update_timer, coords, socket_port, webserver_port):
+    def __init__(self, update_timer, coords, socket_port, webserver_port, front_panel_present):
         self.update_timer = update_timer
         self.coords = coords
         self.socket_active = socket_port != App.APP_MISSING_VALUE
         self.socket_port = socket_port
         self.webserver_active = webserver_port != App.APP_MISSING_VALUE
         self.webserver_port = webserver_port
+        self.front_panel_present = front_panel_present
 
     def clone (self):
         return App(self.update_timer, self.coords, self.socket_port, self.webserver_port)
@@ -53,22 +55,25 @@ class App(object):
         app_timeout = App.APP_MISSING_TXT
         socket_port = App.APP_MISSING_VALUE
         webserver_port = App.APP_MISSING_VALUE
+        front_panel_present = App.APP_MISSING_VALUE
         for line in app_def:
             line_parts = line.split()
             if line_parts[0].strip() == config_kw.APP_TIMER_KW:
                 app_timeout = int(line_parts[1].strip())
-            if line_parts[0].strip() == config_kw.APP_SOCKET_PORT:
+            elif line_parts[0].strip() == config_kw.APP_SOCKET_PORT:
                 socket_port = int(line_parts[1].strip())
-            if line_parts[0].strip() == config_kw.APP_WEBSERVER_PORT:
+            elif line_parts[0].strip() == config_kw.APP_WEBSERVER_PORT:
                 webserver_port = int(line_parts[1].strip())
-            if line_parts[0].strip() == config_kw.APP_LOCATION_COORDS:
+            elif line_parts[0].strip() == config_kw.APP_FRONT_PANEL_KW:
+                front_panel_present = int(line_parts[1].strip())
+            elif line_parts[0].strip() == config_kw.APP_LOCATION_COORDS:
                 coords_str = line_parts[1].strip()
                 coords_xy = coords_str.split(":")
                 coord_x = float(coords_xy[0])
                 coord_y = float(coords_xy[1])
                 coords =  {'longitude' : coord_x, 'latitude' : coord_y }
 
-        app = App(app_timeout, coords, socket_port, webserver_port)
+        app = App(app_timeout, coords, socket_port, webserver_port, front_panel_present)
         return app
 
 
