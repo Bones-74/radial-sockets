@@ -1,35 +1,48 @@
 # Import GPIO and FT232H modules.
 import sys
-print (sys.path)
-from Adafruit_GPIO import GPIO
-import Adafruit_GPIO.FT232H as FT232H
+#print (sys.path)
+import wiringpi2 as wiringpi
 
 from .board_interface import BoardInterface, NOT_IMPLEMENTED
+from numpy import int16
 
-model_name = "ada_ft232h"
+model_name = "mcp23017"
 
-# pin d0-d7 channels 0-7
-# pin c0-c7 channels 8-15
+# pin a0-a7 channels 0-7
+# pin b0-b7 channels 8-15
 
-class ada_ft232h(BoardInterface):
+pin_base = 65       # lowest available starting number is 65
+
+INPUT_PIN = 0
+OUTPUT_PIN = 1
+
+class mcp23017(BoardInterface):
     def __init__(self, bname, bport, num_channels):
-        super(ada_ft232h,self).__init__(bname, bport, num_channels)
+        super(mcp23017,self).__init__(bname, bport, num_channels)
 
-        #FT232H.enumerate_device_serials()
+        # set the pin base for this i2c device, it doesn't matter which
+        # mcp device get which set of pin numbers- it's all internal to
+        # this driver.  externally, we use 0-15
+        global pin_base
+        self.pin_base = pin_base
+        pin_base += 16
 
-        # Temporarily disable the built-in FTDI serial driver on Mac & Linux platforms.
-        FT232H.use_FT232H()
+        # convert the 'port' to the device i2c address
+        # port should be defined with leading '0x'
+        i2c_addr = int(bport,0)
 
-        # Create an FT232H object that grabs the first available FT232H device found.
-        self.ft232h = FT232H.FT232H()
+        # initialise wiringpi and setup mcpdriver for device
+        wiringpi.wiringPiSetup()
+        wiringpi.mcp23017Setup(self.pin_base, i2c_addr)
+
 
         self.channel_dirs = dict()
         self.channel_sense = dict()
         self.channel_configured = dict()
 
         # initialise all gpio as inputs first of all
-        for pin in range(0,16):
-            self.ft232h.setup(pin, GPIO.IN)  # Make pin a digital input
+        for pin in range(self.pin_base, 16):
+            wiringpi.pinMode(pin, INPUT_PIN)
 
 
     def addChannel(self, gpio, direction):
@@ -43,10 +56,12 @@ class ada_ft232h(BoardInterface):
         return BoardInterface.ALL_OK
 
     def configure(self):
+        return NOT_IMPLEMENTED
+
         # Configure digital inputs and outputs using the setup function.
         # Note that pin numbers 0 to 15 map to pins D0 to D7 then C0 to C7 on the board.
         #ft232h.setup(7, GPIO.IN)   # Make pin D7 a digital input.
-        for pin in range(0,16):
+        for pin in range(self.pin_base, 16):
             if pin in self.channel_dirs:
                 if self.channel_dirs[pin] == BoardInterface.CHANNEL_OUTPUT:
                     self.ft232h.setup(pin, GPIO.OUT)  # Make pin C0 a digital output.
@@ -57,10 +72,10 @@ class ada_ft232h(BoardInterface):
 
 
     def getCurrentStatus (self):
-        read_current_status = self.ft232h.mpsse_read_gpio()
         processed_current_status = 0
         for channel_num, _direction in self.channel_dirs.items():
-            current_pin_value = (1 << channel_num) & read_current_status
+            pin = self.pin_base + channel_num
+            current_pin_value = wiringpi.digitalRead(pin)
             if self.channel_sense [channel_num] == BoardInterface.ACTIVE_LOW:
                 # swap the bit so that it is represented by ACTIVE HIGH
                 if not current_pin_value:
@@ -78,15 +93,15 @@ class ada_ft232h(BoardInterface):
                 # Need to invert status
                 new_status = not new_status
 
-        self.ft232h.output(channel, new_status)
+        wiringpi.digitalWrite(self.pin_base + channel, new_status)
 
-        # Only configure outputs after teh first value has been received to prevent
+        # Only configure outputs after the first value has been received to prevent
         # relay from being flipped on then off during initialisation.
         if channel in self.channel_configured:
             if not self.channel_configured [channel]:
                 if self.channel_dirs [channel] == BoardInterface.CHANNEL_OUTPUT:
                     self.channel_configured [channel] = True
-                    self.ft232h.setup(channel, GPIO.OUT)  # Make pin C0 a digital output.
+                    wiringpi.pinMode(self.pin_base + channel, OUTPUT_PIN)
 
     def getRelay (self, channel):
         self.getCurrentStatus();

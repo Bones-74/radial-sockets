@@ -3,7 +3,7 @@ app
   update_timer 10
   webserver_port 30080
   location -1.82:52.9
-  front-panel-present 1
+  front-panel-present 0
 }
 
 board
@@ -12,6 +12,15 @@ board
   type ada_ft232h
   #type SIM
   port /dev/ttyUSB0
+  num-chan 16
+}
+
+board
+{
+  name b2
+  type mcp23017
+  #type SIM
+  port 0x21
   num-chan 16
 }
 
@@ -86,8 +95,8 @@ socket
   name frnt03
   control_pwr
   {
-     board b1
-     channel 10
+     board b2
+     channel 04
      sense active-low
   }
   monitor_socket
@@ -124,8 +133,8 @@ socket
   name gdn04
   control_pwr
   {
-     board b1
-     channel 11
+     board b2
+     channel 5
      sense active-low
   }
   monitor_socket

@@ -17,7 +17,7 @@ gdn04
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
-  override-status inactive
+  override-status force-on
   # [inactive, session-on, session-off, force-on, force-off]
   override-session-state -1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
@@ -43,7 +43,7 @@ frnt03
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
-  override-status inactive
+  override-status force-on
   # [inactive, session-on, session-off, force-on, force-off]
   override-session-state -1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]

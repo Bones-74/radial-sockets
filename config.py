@@ -5,6 +5,7 @@ from status import PowerStatus
 from boards.ft232h import ada_ft232h
 from boards.b01 import B01
 from boards.SimBoard import SimBoard
+from boards.mcp23017 import mcp23017
 from activation_time import ActivationTime
 from boards import board_interface
 
@@ -94,6 +95,8 @@ class Board(object):
                 self.board_comms = ada_ft232h(bname, bport, num_channels)
             elif self.model == SimBoard.ModelName():
                 self.board_comms = SimBoard(bname, bport, num_channels)
+            elif self.model == mcp23017.ModelName():
+                self.board_comms = mcp23017(bname, bport, num_channels)
 
             else:
                 pass
