@@ -2,7 +2,7 @@ import datetime
 import pytz
 
 from Sun import get_sun
-from time_utils import time_now, ParseSimpleTime, AssignAsLocalTime, ConvertUtcToLocalTime
+from time_utils import time_now, ParseSimpleTime, AssignAsLocalTime, ConvertUtcToLocalTime, ConvertLocalToUtcTime
 
 SUNRISE_STR = 'sr'
 SUNSET_STR = 'ss'
@@ -60,7 +60,6 @@ class ActivationTime(object):
 
         return self.activation_time_utc
 
-#    def convert_to_local_time(self, time_dict, timenow):
     def convert_to_time(self, time_dict, timenow):
         sun = get_sun()
 
@@ -72,32 +71,28 @@ class ActivationTime(object):
             sunset_lcl = sun.getSunsetTimeLocal(date=timenow)
             sunset_utc = sun.getSunsetTimeUtc(date=timenow)
             basetime_utc = sunset_utc
-#            dst_diff = sunset_lcl.dst()
-            #sunset_lcl = AssignAsLocalTime(ss_time['dt'])
-#            hours = (sunset_lcl + dst_diff).hour
+
             hours = sunset_lcl.hour
             minutes = sunset_lcl.minute
             basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
-#            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         elif basetime.strip() == SUNRISE_STR:
             sunrise_lcl = sun.getSunriseTimeLocal(date=timenow)
             sunrise_utc = sun.getSunriseTimeUtc(date=timenow)
             basetime_utc = sunrise_utc
-#            dst_diff = sunrise_lcl.dst()
-            #sunrise_lcl = AssignAsLocalTime(ss_time['dt'])
-#            hours = (sunrise_lcl + dst_diff).hour
+
             hours = sunrise_lcl.hour
             minutes = sunrise_lcl.minute
             basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
-#            self.basetime = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
         else:
             (parse_ok, hours, mins) = ParseSimpleTime(basetime,enforce_strict=True)
             if parse_ok:
                 basetime_lcl = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
-                basetime_utc = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
-#                self.basetime = timenow.replace(hour=hours, minute=mins, second=0, microsecond=0)
+                basetime_lcl = basetime_lcl.replace(tzinfo=None)
+                basetime_lcl = AssignAsLocalTime(basetime_lcl)
+                basetime_utc = ConvertLocalToUtcTime (basetime_lcl)
+
             else:
                 return None
         isNegative = False
@@ -144,8 +139,6 @@ class ActivationTime(object):
         floor_time = None
         ceiling_time = None
         trans_time_parts = time_txt.split('if')
-#        if len(trans_time_parts) != 2:
-#            return None
 
         base_time = ActivationTime.parse_time (trans_time_parts[0])
         if base_time is None:

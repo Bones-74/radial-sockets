@@ -128,7 +128,7 @@ def print_days(start_date, end_date, config, _status, socket_name, step=10):
 def print_day_image(fn, date, config, socket_name, image_width=800, day_height=5):
     return print_days_image(fn, date, date, config, socket_name, image_width, day_height=3)
 
-def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5, current_day=None):
+def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5):
     # start/finish one day before/efter the required time frame
     # We do not print the img_start_date, but collect info on it so we know the starting
     # power for the 'real' start_date
@@ -177,13 +177,6 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
         if ((last_datetime.month == act_time.month) and (last_datetime.day < act_time.day)) \
          or ((last_datetime.month < act_time.month) and (act_time.day == 1)) \
          or ((last_datetime.year < act_time.year) and (act_time.month == 1)):
-
-            # see if this the current day for highlighting later:
-            if current_day and \
-                ((current_day.day == act_time.day) and
-                 (current_day.month == act_time.month) and
-                 (current_day.year == act_time.year)):
-                today_idx = day_idx
 
             if start_display:
                 # draw every other month a slightly different color
@@ -303,6 +296,32 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     for (point, name) in month_names:
         draw.text(point, name, font=fnt, fill=(0,0,0,255))
 
+    img.save(fn)
+
+
+def overlay_current_day(fn, fn_ovr, start_date, end_date, config, socket_name, image_width=800, day_height=5, current_day=None):
+    # start/finish one day before/efter the required time frame
+    # We do not print the img_start_date, but collect info on it so we know the starting
+    # power for the 'real' start_date
+    img_start_date = start_date - timedelta(days = 1)
+    img_end_date = end_date + timedelta(days = 1)
+
+    MINS_IN_DAY = 60 * 24
+    HOUR_COLOR = 'black'
+
+    # create image:
+    offset_x = 10
+    offset_y = 20
+    offset_text_x = -10
+    num_days = (end_date - start_date).days + 1
+    img = Image.open(fn)
+    day_width = (image_width - (2 *offset_x))
+
+    # build up the image day-by-day
+    draw = ImageDraw.Draw(img)
+    last_datetime = None
+    today_idx = (current_day - start_date).days
+
     # draw current day marker as desired
     if current_day:
         p_x1 = 0
@@ -331,7 +350,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
         rect_xy2 = (line_x2, line_y2)
         draw.rectangle((rect_xy1, rect_xy2), outline=HOUR_COLOR)
 
-    img.save(fn, 'png')
+    img.save(fn_ovr)
 
 
 def day_seconds(timenow):

@@ -2,8 +2,9 @@ from flask import Flask, render_template, request, redirect, url_for
 import datetime
 import pytz
 import os
+from pathlib import Path
 
-from print_utils import print_day, print_days, print_day_image, print_days_image
+from print_utils import print_day, print_days, print_day_image, print_days_image, overlay_current_day
 from time_utils import time_now, ConvertUtcToLocalTime
 from config import Board
 from boards.SimBoard import SimBoard
@@ -17,8 +18,8 @@ IMAGES_FOLDER = 'images'
 web_svr.config['UPLOAD_FOLDER'] = IMAGES_FOLDER
 web_svr.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
-SINGLE_DAY_MAP_FN = 'sday.png'
-MULTI_DAY_MAP_FN = 'mday.png'
+SINGLE_DAY_MAP_FN = 'sday'
+MULTI_DAY_MAP_FN = 'mday'
 
 
 host_addr = "192.168.1.127"
@@ -123,27 +124,37 @@ def socket_info(socket_name):
     #pr = cProfile.Profile()
     #pr.enable()
 
-    single_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], SINGLE_DAY_MAP_FN)
-    multi_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], MULTI_DAY_MAP_FN)
-    single_day_full = os.path.join(web_svr.root_path, 'static', single_day)
-    multi_day_full = os.path.join(web_svr.root_path, 'static', multi_day)
+    time_now_utc = time_now()
+    time_now_lcl = ConvertUtcToLocalTime(time_now_utc)
+    time_now_lcl_str = time_now_lcl.strftime("%Y-%m-%d %H:%M:%S")
+    fn_time_lcl_str = time_now_lcl.strftime("%Y%m%d")
+
+    skt_sday_base = "{}_{}_{}".format(fn_time_lcl_str, socket_name, SINGLE_DAY_MAP_FN)
+    skt_mday_base = "{}_{}_{}".format(fn_time_lcl_str, socket_name, MULTI_DAY_MAP_FN)
+    skt_sday_fn = "{}.png".format(skt_sday_base)
+    skt_mday_fn = "{}.png".format(skt_mday_base)
+    single_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], skt_sday_base)
+    multi_day = os.path.join(web_svr.config['UPLOAD_FOLDER'], skt_mday_base)
+    single_day_fullbase = os.path.join(web_svr.root_path, 'static', single_day)
+    multi_day_fullbase = os.path.join(web_svr.root_path, 'static', multi_day)
+    multi_day_full = os.path.join(web_svr.root_path, 'static', multi_day + ".png")
 
     board_name = cfg_clone.sockets[socket_name].control_pwr.board
     cfg_clone.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
-    time_now_utc = time_now()
-    time_now_lcl = ConvertUtcToLocalTime(time_now_utc)
-    time_now_lcl_str = time_now_lcl.strftime("%Y-%m-%d %H:%M:%S")
-
     #on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
-    print_day_image(single_day_full, time_now_lcl, cfg_clone, socket_name, day_height=25)
+#    print_day_image(single_day_full, time_now_lcl, cfg_clone, socket_name, day_height=25)
 
     start_date = time_now_lcl - datetime.timedelta(days = 100)
     end_date = time_now_lcl + datetime.timedelta(days = 100)
-    #start_date = pdate - datetime.timedelta(days = 1)
-    #end_date = pdate + datetime.timedelta(days = 1)
-    #full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
-    print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name, day_height=2, current_day=time_now_lcl)
+
+    mday_base_file = Path(multi_day_full)
+    if not mday_base_file.exists():
+        print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name, day_height=2)
+
+    multi_day_full_ovrlay = multi_day_fullbase + "_overlay.png"
+    multi_day = multi_day + "_overlay.png"
+    overlay_current_day(multi_day_full, multi_day_full_ovrlay, start_date, end_date, cfg_clone, socket_name, day_height=2, current_day=time_now_lcl)
 
 
     sts_clone = relay_status.clone()

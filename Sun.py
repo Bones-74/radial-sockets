@@ -44,7 +44,6 @@ class Sun:
         day = calcdate.day
         month = calcdate.month
         year = calcdate.year
-        
 
         longitude = self.coords['longitude']
         latitude = self.coords['latitude']
