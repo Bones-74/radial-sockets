@@ -10,7 +10,7 @@ from datetime import timedelta
 
 from config import Config, App
 from status import OverrideStatus, SocketStatus, PowerStatus, Status
-from time_utils import time_now, getDateAndTime, set_location_coords, activate_test_time, deactivate_test_time, calc_and_activate_test_time
+from time_utils import time_now, getDateAndTime, set_location_coords, activate_test_time, deactivate_test_time
 from Sun import get_sun
 from control import Control
 #from time import sleep
@@ -363,8 +363,10 @@ def relay_process(control, config, status, overrides, socket_name=None):
 
         # fill in todays sunrise/sunset details
         sun = get_sun()
-        control.sunrise = sun.getSunriseTimeLocal(control.time)
-        control.sunset = sun.getSunsetTimeLocal(control.time)
+        #control.sunrise = sun.getSunriseTimeLocal(control.time)
+        #control.sunset = sun.getSunsetTimeLocal(control.time)
+        control.sunrise = sun.getSunriseTimeUtc(control.time)
+        control.sunset = sun.getSunsetTimeUtc(control.time)
         #control.sunrise = AssignAsLocalTime(sunrise['dt'])
         #control.sunset = AssignAsLocalTime(sunset['dt'])
 

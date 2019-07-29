@@ -3,7 +3,7 @@
 import math
 import datetime
 
-from time_utils import ConvertUtcToLocalTime
+from time_utils import ConvertUtcToLocalTime, ConvertLocalToUtcTime, time_now
 
 
 location_coords = {'longitude' : -1.82, 'latitude' : 52.9 }
@@ -18,6 +18,14 @@ class Sun:
             coords = {'longitude' : -1.82, 'latitude' : 52.9 }
         self.coords = coords
 
+    def getSunriseTimeUtc( self, date=None ):
+        sr_utc = self.calcSunTime(True, date)
+        return  sr_utc['dt']
+
+    def getSunsetTimeUtc( self, date=None):
+        ss_utc =self.calcSunTime(False, date) 
+        return ss_utc['dt']
+
     def getSunriseTimeLocal( self, date=None ):
         sr_utc = self.calcSunTime(True, date)
         return  ConvertUtcToLocalTime(sr_utc['dt'])
@@ -29,11 +37,14 @@ class Sun:
     def calcSunTime( self, isRiseTime, calcdate, zenith = 90.8 ):
 
         # isRiseTime == False, returns sunsetTime
-        if not calcdate:
-            calcdate = datetime.datetime.now()
+        if calcdate:
+            calcdate = ConvertLocalToUtcTime(calcdate)
+        else:
+            calcdate = time_now()
         day = calcdate.day
         month = calcdate.month
         year = calcdate.year
+        
 
         longitude = self.coords['longitude']
         latitude = self.coords['latitude']

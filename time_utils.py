@@ -6,17 +6,6 @@ import time
 
 
 testing_time = None
-def calc_test_time(ttime_hrs,ttime_mins, basedate=None):
-    try:
-        if basedate:
-            timenow = basedate
-        else:
-            timenow = datetime.datetime.now()
-        ttime = timenow.replace(hour=ttime_hrs, minute=ttime_mins, second=0, microsecond=0)
-    except ValueError:
-        ttime = None
-
-    return ttime
 
 def activate_test_time(ttime):
     global testing_time
@@ -47,7 +36,9 @@ def time_now():
         return testing_time
         #return AssignAsLocalTime(testing_time)
     else:
-        return AssignAsLocalTime(datetime.datetime.now())
+        local_time = AssignAsLocalTime(datetime.datetime.now())
+        utc = ConvertLocalToUtcTime(local_time)
+        return utc
 
 
 def set_location_coords(coords):
@@ -77,23 +68,10 @@ def ConvertUtcToLocalTime(dt_utc):
     local_tz = pytz.timezone ("Europe/London")
     return dt_utc.astimezone(local_tz)
 
-    
-    
-#    now = datetime.datetime.now()
-#    local_tz = pytz.timezone ("Europe/London")
-#    utc_tz = pytz.timezone ("Etc/UTC")
-#    dt_local = utc_tz.localize(dt_utc)
-#    return dt_utc.astimezone(local_tz)
-
 
 def ConvertLocalToUtcTime(dt_local):
     local_tz = pytz.timezone ("Etc/UTC")
     return dt_local.astimezone(local_tz)
-#    now = datetime.datetime.now()
-#    local_tz = pytz.timezone ("Europe/London")
-#    utc_tz = pytz.timezone ("Etc/UTC")
-#    dt_utc = utc_tz.localize(dt_utc)
-#    return dt_utc.astimezone(local_tz)
 
 
 def intTryParse(value):

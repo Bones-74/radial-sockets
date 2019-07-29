@@ -32,6 +32,10 @@ class config_kw():
 
     STATES_KW = 'states'
 
+    ACTIVE_LIST_KW = 'active-list'
+
+    COMMENT_CHAR = '#'
+
 
 class App(object):
     APP_SINGLE_RUN_TIMER = 0
@@ -175,6 +179,13 @@ class GPIO(object):
                 gpio.sense = gpio_sense
         return gpio
 
+    def clone(self):
+        gpio = GPIO()
+        gpio.board = self.board
+        gpio.channel = self.channel
+        gpio.sense = self.sense
+
+        return gpio
 
 class Socket(object):
     SKT_MISSING_TXT = "**missing**"
@@ -219,8 +230,6 @@ class Socket(object):
         # and the current date/time, work out which state this socket should
         # be in and wheter it should be on or off
 
-#        timenow = time_now()
-
         # prepare next state as the last one defined, ie, the one that
         # stretches over midnight into the new day
         next_state = self.states [-1]
@@ -238,9 +247,7 @@ class Socket(object):
         # calculate the active states for this socket for the
         # day represented by 'timenow
 
-#        timenow = time_now()
-
-        # prepare next state as the last one defined, ie, the one that
+       # prepare next state as the last one defined, ie, the one that
         # stretches over midnight into the new day
         for state in self.states:
             state.activation_time.update_activation_time(timenow)
@@ -253,6 +260,10 @@ class Socket(object):
             states_.append(skt_state.clone())
 
         skt_.add_states(states_)
+
+        skt_.mon_ovr_on  = self.mon_ovr_on.clone()
+        skt_.mon_auto_on  = self.mon_auto_on.clone()
+        skt_.control_pwr  = self.control_pwr.clone()
 
         return skt_
 
@@ -292,6 +303,7 @@ class SocketState(object):
             activatation_time = ActivationTime.parse_activation_time(line_parts[1])
         except:
             activatation_time = None
+            raise
 
         if power_txt == PowerStatus.PWR_OFF_STR:
             power_id = PowerStatus.PWR_OFF
@@ -342,19 +354,21 @@ class Config(object):
         self.boards = {}
         self.sockets = {}
         self.app = None
+        self.active_sockets = []
 
     def init(self):
-        for _socket_name, socket in self.sockets.items():
-            ret2 = ret3 = 0
-            ret1 = self.boards[socket.control_pwr.board].add_channel(socket.control_pwr, board_interface.BoardInterface.CHANNEL_OUTPUT)
-            #ret1 = self.boards[socket.board].add_channel(socket.channel, socket.sense, board_interface.BoardInterface.CHANNEL_OUTPUT)
-            if socket.mon_ovr_on:
-                ret2 = self.boards[socket.mon_ovr_on.board].add_channel(socket.mon_ovr_on, board_interface.BoardInterface.CHANNEL_INPUT)
-            if socket.mon_auto_on:
-                ret3 = self.boards[socket.mon_auto_on.board].add_channel(socket.mon_auto_on, board_interface.BoardInterface.CHANNEL_INPUT)
+        for socket_name, socket in self.sockets.items():
+            if socket_name in self.active_sockets:
+                ret2 = ret3 = 0
+                ret1 = self.boards[socket.control_pwr.board].add_channel(socket.control_pwr, board_interface.BoardInterface.CHANNEL_OUTPUT)
+                #ret1 = self.boards[socket.board].add_channel(socket.channel, socket.sense, board_interface.BoardInterface.CHANNEL_OUTPUT)
+                if self.app.front_panel_present and socket.mon_ovr_on:
+                    ret2 = self.boards[socket.mon_ovr_on.board].add_channel(socket.mon_ovr_on, board_interface.BoardInterface.CHANNEL_INPUT)
+                if self.app.front_panel_present and socket.mon_auto_on:
+                    ret3 = self.boards[socket.mon_auto_on.board].add_channel(socket.mon_auto_on, board_interface.BoardInterface.CHANNEL_INPUT)
 
-            if ret1 or ret2 or ret3:
-                return self.CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED
+                if ret1 or ret2 or ret3:
+                    return self.CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED
 
 #        for _board_name, board in self.boards.items():
 #            board.init()
@@ -451,6 +465,7 @@ class Config(object):
         GET_SOCKET_MONITOR_OVR_ON_ = 5
         GET_SOCKET_CONTROL_PWR = 6
         GET_APP = 7
+        GET_ACTIVE = 8
 
         config = Config()
         states = {}
@@ -461,6 +476,7 @@ class Config(object):
         app_text = []
         board_text = []
         socket_text = []
+        active_text = []
         monitor_skts_text = []
         monitor_ovr_on_text = []
         control_pwr_gpio_text =[]
@@ -485,6 +501,10 @@ class Config(object):
                 elif line == config_kw.APP_KW:
                     app_text = []
                     state = GET_APP
+                elif line == config_kw.ACTIVE_LIST_KW:
+                    active_text = []
+                    state = GET_ACTIVE
+
             elif state == GET_BOARD:
                 if line == '{':
                     pass
@@ -566,6 +586,15 @@ class Config(object):
                     state = FIND_TYPE
                 else:
                     app_text.append(line)
+
+            elif state == GET_ACTIVE:
+                if line == '{':
+                    pass
+                elif line == '}':
+                    state = FIND_TYPE
+                else:
+                    if line[0] != config_kw.COMMENT_CHAR:
+                        config.active_sockets.append(line.strip())
 
         if config.init():
             exit(-15)

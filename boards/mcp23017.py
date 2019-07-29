@@ -1,7 +1,7 @@
 # Import GPIO and FT232H modules.
 import sys
 #print (sys.path)
-import wiringpi2 as wiringpi
+import wiringpi as wiringpi
 
 from .board_interface import BoardInterface, NOT_IMPLEMENTED
 from numpy import int16

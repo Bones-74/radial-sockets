@@ -24,6 +24,18 @@ board
   num-chan 16
 }
 
+active-list
+{
+  SnugLHS
+  SnugRHS
+  frnt03
+  gdn04
+  gdn05
+  gdn06
+  gdn07
+  gdn08
+}
+
 socket
 {
   name SnugLHS
@@ -157,14 +169,148 @@ socket
   [
        0 on @ sr-00:30
        1 off @ sr+00:30
-       #2 on @ 15:00
-       #3 off @ 15:30
-       #4 on @  ss-01:30
-       #5 off @  ss+00:30
        2 on @  ss-01:30
        3 off @  ss+00:30
-       #4 on @ 15:00
-       #5 off @ 15:30
   ]
 }
+
+socket
+{
+  name gdn05
+  control_pwr
+  {
+     board b2
+     channel 6
+     sense active-low
+  }
+  monitor_socket
+  {
+     board b1
+     channel 00
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     #channel 10
+     channel 02
+     sense active-low
+  }
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [
+       0 on @ sr-00:30
+       1 off @ sr+00:30
+       2 on @  ss-01:30
+       3 off @  ss+00:30
+  ]
+}
+
+
+socket
+{
+  name gdn06
+  control_pwr
+  {
+     board b2
+     channel 7
+     sense active-low
+  }
+  monitor_socket
+  {
+     board b1
+     channel 00
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     #channel 10
+     channel 02
+     sense active-low
+  }
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [
+       0 on @ sr-00:30
+       1 off @ sr+00:30
+       2 on @  ss-01:30
+       3 off @  ss+00:30
+  ]
+}
+
+
+socket
+{
+  name gdn07
+  control_pwr
+  {
+     board b1
+     channel 10
+     sense active-low
+  }
+  monitor_socket
+  {
+     board b1
+     channel 00
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     #channel 10
+     channel 02
+     sense active-low
+  }
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [
+       0 on @ sr-00:30
+       1 off @ sr+00:30
+       2 on @  ss-01:30
+       3 off @  ss+00:30
+  ]
+}
+
+
+socket
+{
+  name gdn08
+  control_pwr
+  {
+     board b1
+     channel 11
+     sense active-low
+  }
+  monitor_socket
+  {
+     board b1
+     channel 00
+     sense active-low
+  }
+  monitor_hw_ovr_on
+  {
+     board b1
+     #channel 10
+     channel 02
+     sense active-low
+  }
+  # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if after 17:00 (or at 17:00)
+  # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
+  states
+  [
+       0 on @ sr-00:30
+       1 off @ sr+00:30
+       2 on @  ss-01:30
+       3 off @  ss+00:30
+  ]
+}
+
 

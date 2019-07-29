@@ -35,9 +35,11 @@ def get_on_off_times(start_date, end_date, config, socket_name):
 
     for d in daterange(start_date, end_date):
         sun = get_sun()
-        sunrise_lcl = sun.getSunriseTimeLocal(d)
-        #sunrise_lcl = ConvertUtcToLocalTime(sunrise['dt'])
         sunset_lcl = sun.getSunsetTimeLocal(d)
+        sunset_utc = sun.getSunsetTimeUtc(d)
+        #sunrise_lcl = ConvertUtcToLocalTime(sunrise['dt'])
+        sunrise_lcl = sun.getSunriseTimeLocal(d)
+        sunrise_utc = sun.getSunriseTimeUtc(d)
         #sunset_lcl = ConvertUtcToLocalTime(sunset['dt'])
         sr_ss_seq.append((sunrise_lcl, sunset_lcl))
 
@@ -60,7 +62,7 @@ def get_on_off_times(start_date, end_date, config, socket_name):
             transition_seq.append((marker_time, power))
 
     transition_seq_ordered = []
-    
+
     return transition_seq, sr_ss_seq
 
 def print_days(start_date, end_date, config, _status, socket_name, step=10):
@@ -335,6 +337,9 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
 def day_seconds(timenow):
     midnight = timenow.replace(hour=0, minute=0, second=0, microsecond=0)
     return (timenow - midnight).seconds
+#    dst_diff = timenow.dst()
+#    timenow_dst = timenow + dst_diff
+#    return (timenow_dst - midnight).seconds
 
 
 def day_minutes(timenow):
@@ -351,41 +356,4 @@ def print_days2(relay_process, start_date, end_date, config, status, socket_name
         count += 1
         #print("{}: {}".format (d.strftime('%Y.%m.%d'), day_str))
     return days
-
-def print_day2(relay_process, date, config, status, socket_name, step=10):
-    ON_CHAR = "X"
-    OFF_CHAR = "-"
-    OVR_CHAR = "O"
-
-    overrides = {}
-
-    day_list = []
-    ovr_str = ""
-    control = Control()
-    control.simulate_run = True
-    count_r = 0
-    # reset activation times
-    config.sockets[socket_name].reset_state_activation_time()
-    for hour in range (24):
-    #for hour in range (10,11):
-        for minute in range (00, 60, step):
-            ttime = calc_and_activate_test_time(hour,minute,basedate=date)
-            control.time = ttime
-            count_r += 1
-            #ret_code = relay_process(control, config, status, overrides, socket_name)
-            #if ret_code:
-            #    exit(ret_code)
-            skt_status = status.sockets[socket_name]
-            if skt_status.actual_pwr == PowerStatus.PWR_OFF:
-                day_list.append(OFF_CHAR)
-            else:
-                day_list.append(ON_CHAR)
-            #if skt_status.ovr_sts == OverrideStatus.OVR_INACTIVE:
-            #    ovr_str += OFF_CHAR
-            #else:
-            #    ovr_str += OVR_CHAR
-
-    day_str = ''.join(day_list)
-    return day_str, ovr_str
-
 

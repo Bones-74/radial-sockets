@@ -4,10 +4,11 @@ import pytz
 import os
 
 from print_utils import print_day, print_days, print_day_image, print_days_image
-from time_utils import time_now
+from time_utils import time_now, ConvertUtcToLocalTime
 from config import Board
 from boards.SimBoard import SimBoard
 from status import PowerStatus, OverrideStatus
+from Sun import get_sun
 
 web_svr = Flask(__name__)
 
@@ -77,9 +78,11 @@ def index():
     #titles = ["name", "actual_pwr","calcd_auto_sts", "ovr_sts"]
     titles = ["name", "switch-mode", "socket pwr","auto control",  "auto ovr"]
     table_rows = get_table_rows(relay_status, titles, "index")
+    sun = get_sun()
+    suntimes = (sun.getSunriseTimeLocal(), sun.getSunsetTimeLocal())
     return render_template('table.html',
                            table_rows=table_rows,
-                           control=relay_control,
+                           suntimes=suntimes,
                            config=relay_config,
                            titles = titles)
 
@@ -125,21 +128,22 @@ def socket_info(socket_name):
     single_day_full = os.path.join(web_svr.root_path, 'static', single_day)
     multi_day_full = os.path.join(web_svr.root_path, 'static', multi_day)
 
-    board_name = cfg_clone.sockets[socket_name].board
+    board_name = cfg_clone.sockets[socket_name].control_pwr.board
     cfg_clone.add_board(Board(board_name,  SimBoard.ModelName(), "/dev/ttyUsb0", 8))
 
-    pdate = time_now()
-    pdate_str = pdate.strftime("%Y-%m-%d %H:%M:%S")
+    time_now_utc = time_now()
+    time_now_lcl = ConvertUtcToLocalTime(time_now_utc)
+    time_now_lcl_str = time_now_lcl.strftime("%Y-%m-%d %H:%M:%S")
 
     #on_map = print_day(pdate, cfg_clone, sts_clone, socket_name)
-    print_day_image(single_day_full, pdate, cfg_clone, socket_name, day_height=25)
+    print_day_image(single_day_full, time_now_lcl, cfg_clone, socket_name, day_height=25)
 
-    start_date = pdate - datetime.timedelta(days = 100)
-    end_date = pdate + datetime.timedelta(days = 100)
+    start_date = time_now_lcl - datetime.timedelta(days = 100)
+    end_date = time_now_lcl + datetime.timedelta(days = 100)
     #start_date = pdate - datetime.timedelta(days = 1)
     #end_date = pdate + datetime.timedelta(days = 1)
     #full_on_map = print_days(start_date, end_date, cfg_clone, sts_clone, socket_name)
-    print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name, day_height=2, current_day=pdate)
+    print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name, day_height=2, current_day=time_now_lcl)
 
 
     sts_clone = relay_status.clone()
@@ -149,16 +153,17 @@ def socket_info(socket_name):
     #pr.disable()
     #pr.print_stats()
 
-    
     socket_links = get_sockets_in_line (cfg_clone)
     # reset info by cloning the real config again
     cfg_clone = relay_config.clone()
-    
+    sun = get_sun()
+    suntimes = (sun.getSunriseTimeLocal(), sun.getSunsetTimeLocal())
+
     return render_template('socket_info.html',
-                           time_str=pdate_str,
+                           time_str=time_now_lcl_str,
                            table_row=socket_row,
                            socket_name=socket_name,
-                           control=relay_control,
+                           suntimes=suntimes,
                            config=cfg_clone,
                            titles = titles,
                            s_map=single_day,

@@ -1,8 +1,8 @@
-SnugRHS
+gdn04
 {
-  state 1
+  state 2
   # [on/off]
-  auto-status  off
+  auto-status  on
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
@@ -11,24 +11,50 @@ SnugRHS
   override-t-until None
 }
 
-gdn04
+gdn05
 {
-  state 1
+  state 2
   # [on/off]
-  auto-status  off
+  auto-status  on
   # [inactive, session-on, session-off, force-on, force-off]
-  override-status force-on
+  override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
   override-session-state -1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
   override-t-until None
 }
 
-SnugLHS
+gdn06
 {
-  state 1
+  state 2
   # [on/off]
-  auto-status  off
+  auto-status  on
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-status inactive
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-session-state -1
+  # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
+  override-t-until None
+}
+
+gdn07
+{
+  state 2
+  # [on/off]
+  auto-status  on
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-status inactive
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-session-state -1
+  # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
+  override-t-until None
+}
+
+gdn08
+{
+  state 2
+  # [on/off]
+  auto-status  on
   # [inactive, session-on, session-off, force-on, force-off]
   override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
@@ -39,11 +65,37 @@ SnugLHS
 
 frnt03
 {
-  state 3
+  state 4
   # [on/off]
-  auto-status  off
+  auto-status  on
   # [inactive, session-on, session-off, force-on, force-off]
-  override-status force-on
+  override-status inactive
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-session-state -1
+  # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
+  override-t-until None
+}
+
+SnugLHS
+{
+  state 0
+  # [on/off]
+  auto-status  on
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-status inactive
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-session-state -1
+  # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
+  override-t-until None
+}
+
+SnugRHS
+{
+  state 0
+  # [on/off]
+  auto-status  on
+  # [inactive, session-on, session-off, force-on, force-off]
+  override-status inactive
   # [inactive, session-on, session-off, force-on, force-off]
   override-session-state -1
   # [hh:mm, dd/MM@hh:mm, dd/MM/YYYY@hh:mm]
