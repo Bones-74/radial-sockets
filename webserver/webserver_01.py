@@ -175,7 +175,7 @@ def socket_info(socket_name):
                            table_row=socket_row,
                            socket_name=socket_name,
                            suntimes=suntimes,
-                           config=cfg_clone,
+                           config=relay_config,
                            titles = titles,
                            s_map=single_day,
                            m_map=multi_day,

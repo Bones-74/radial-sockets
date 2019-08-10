@@ -542,7 +542,7 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
     validation_res, text = validate_args(new_overrides, config)
     if validation_res == relay_exit_codes.EXIT_CODE_CMDLINE_ERROR_UNRECOGNISED_SOCKET:
         print("Unrecognised socket {} in commandline".format(text))
-        return validationfilename_res, None
+        return validation_res, None
 
     # now take the info read from the config and status files and process the info
     control = Control()
@@ -642,6 +642,7 @@ def update_board_inputs(control, config, status):
 if __name__ == "__main__":
     err_code, control = main__1st_run_from_commandline(args=sys.argv[1:])
     quit = False
+
     while not control.exit_now:
         sleep(10)
 

@@ -5,6 +5,7 @@ Created on 10 May 2019
 '''
 from datetime import timedelta
 from PIL import Image, ImageDraw, ImageFont
+import os
 
 #from relay import relay_process
 from status import PowerStatus
@@ -200,15 +201,30 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     month_names.append((point_xy_text, calendar.month_name[act_time.month]))
                     month_count += 1
 
-                # fill in to end of day if PWR is ON
+                # fill in to end of day (and beyond) if PWR is ON
                 if last_power_state == PowerStatus.PWR_ON:
+                    minutes_so_far_today = day_minutes(act_time)
+                    percentage_of_day = (minutes_so_far_today / (float(MINS_IN_DAY)))
+                    current_width = int(day_width * percentage_of_day)
+                    # limit to the amount of space in the 'buffer' on the left and right of the 'day image'
+                    if current_width > offset_x:
+                        current_width = offset_x
                     rect_x1 = last_x_pos
-                    rect_x2 = image_width - offset_x
+                    rect_x2 = offset_x + day_width + current_width
                     rect_y1 = offset_y + (day_idx * day_height)
                     rect_y2 = offset_y + ((day_idx + 1) * day_height)
                     rect_xy1 = (rect_x1, rect_y1)
                     rect_xy2 = (rect_x2, rect_y2)
                     draw.rectangle((rect_xy1, rect_xy2), fill=ON_COLOR)
+
+                    # now setup the last_x_pos for the next line (new, current date)
+                    if (offset_x + day_width) - last_x_pos > offset_x:
+                        last_x_pos = 0
+                    else:
+                        last_x_pos = last_x_pos - day_width
+                else:
+                    # reset to start of day
+                    last_x_pos = offset_x
 
                 # draw on the sr/ss marker desired
                 if draw_sr_ss:
@@ -236,8 +252,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     point_xy2 = (p_x, p_y2)
                     draw.line((point_xy1, point_xy2), SUN_COLOR, ss_sr_width)
 
-                # reset to start of day
-                last_x_pos = offset_x
+                # inc day count
                 day_idx += 1
 
             else:
@@ -296,6 +311,13 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     for (point, name) in month_names:
         draw.text(point, name, font=fnt, fill=(0,0,0,255))
 
+    # get the working directory for the images and create the path
+    image_path = os.path.dirname(os.path.abspath(fn))
+    try:
+        os.makedirs(image_path)
+    except FileExistsError:
+        # this is an acceptable exception
+        pass
     img.save(fn)
 
 

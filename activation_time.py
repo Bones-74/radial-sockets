@@ -1,5 +1,5 @@
 import datetime
-import pytz
+import random
 
 from Sun import get_sun
 from time_utils import time_now, ParseSimpleTime, AssignAsLocalTime, ConvertUtcToLocalTime, ConvertLocalToUtcTime
@@ -36,7 +36,7 @@ class ActivationTime(object):
         update_time = self.last_activation_time + datetime.timedelta(days=1)
         if update_time < timenow:
             update_activation_time = True
-            self.last_activation_time = timenow#
+            self.last_activation_time = timenow
 
         if update_activation_time:
             base_t = self.convert_to_time(self.basetime, timenow)
@@ -95,10 +95,10 @@ class ActivationTime(object):
 
             else:
                 return None
-        isNegative = False
+        isNegativeMod = False
         if modifier:
-            isNegative = modifier[0] == '-'
-            if isNegative:
+            isNegativeMod = modifier[0] == '-'
+            if isNegativeMod:
                 modifier = modifier[1:]
 
             (parse_ok, hours, mins) = ParseSimpleTime(modifier)
@@ -108,29 +108,33 @@ class ActivationTime(object):
                 return None
         else:
             self.modifier = datetime.timedelta(0, 0, 0)
-        if rand:
 
+        isNegativeRand = False
+        if rand:
             (parse_ok, hours,mins) = ParseSimpleTime(rand)
             if parse_ok:
-                self.rand = datetime.timedelta(0, minutes=mins, hours=hours)
+                total_mins = (60 * hours) + mins
+                rmins = random.randint(-total_mins,total_mins)
+                if rmins < 0:
+                    isNegativeRand = True
+                    rmins = -rmins
+                rand = datetime.timedelta(0, minutes=rmins)
             else:
                 return None
         else:
-            self.rand = datetime.timedelta(0, 0, 0)
-
-        time_lcl = 0
-        if isNegative:
-            time_lcl = basetime_lcl - self.modifier
-        else:
-            time_lcl = basetime_lcl + self.modifier
+            rand = datetime.timedelta(0, 0, 0)
 
         time_utc = 0
-        if isNegative:
+        if isNegativeMod:
             time_utc = basetime_utc - self.modifier
         else:
             time_utc = basetime_utc + self.modifier
 
-        #return time_lcl
+        if isNegativeRand:
+            time_utc -= rand
+        else:
+            time_utc += rand
+
         return time_utc
 
 
