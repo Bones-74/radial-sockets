@@ -247,7 +247,7 @@ class Socket(object):
         # calculate the active states for this socket for the
         # day represented by 'timenow
 
-       # prepare next state as the last one defined, ie, the one that
+        # prepare next state as the last one defined, ie, the one that
         # stretches over midnight into the new day
         for state in self.states:
             state.activation_time.update_activation_time(timenow)

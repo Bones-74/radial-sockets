@@ -594,6 +594,20 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
         st_thread = threading.Thread(target=supertime_change_time,args=st_args)
         st_thread.start()
 
+
+#    #For debugging the image drawing
+#    # Prep the filename of the image generated
+#    multi_day = "/home/marc/temp/mja02.png"
+#
+#    # generate the image
+#    start_date = time_now() - timedelta(days = 100)
+#    end_date = time_now() + timedelta(days = 100)
+#    from print_utils import print_days_image
+#    print_days_image(multi_day, start_date, end_date, config, "SnugLHS", day_height=2, strobe=7)
+
+
+
+
     return relay_exit_codes.EXIT_CODE_OK, control
 
 def supertime_change_time(control, mins_per_sec):

@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+    <head>
+    <title>Rose House state screen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    </head>
+    <body>
+      <br><br>
+      <div style="clear: left;">
+          <p style="float: left;">
+              <img src="{{ url_for('static',filename=m_map) }}" alt="User Image">
+          </p>
+          <br>
+          <!-- output the states -->
+          {% set socket_cfg = config.sockets [socket_name] %}
+      </div>
+      <div>
+      {{ state_entry | safe }}
+      </div>
+
+  <script>
+    {{ script_entry | safe }}
+  </script>
+   </body>
+</html>
+  
+  
+  

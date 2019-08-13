@@ -129,7 +129,7 @@ def print_days(start_date, end_date, config, _status, socket_name, step=10):
 def print_day_image(fn, date, config, socket_name, image_width=800, day_height=5):
     return print_days_image(fn, date, date, config, socket_name, image_width, day_height=3)
 
-def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5):
+def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5, strobe=1):
     # start/finish one day before/efter the required time frame
     # We do not print the img_start_date, but collect info on it so we know the starting
     # power for the 'real' start_date
@@ -160,15 +160,11 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
 
     # build up the image day-by-day
     draw = ImageDraw.Draw(img)
-    start_display = False
-    last_datetime = None
-    last_power_state = PowerStatus.PWR_OFF
-    last_x_pos = 0
-    day_idx = 0
-    today_idx = -1
-    sr_ss_idx = 0
     month_count = 0
     month_names = []
+    start_display = False
+    last_datetime = None
+    day_idx = 0
     for (act_time, power) in transition_seq:
         if last_datetime is None:
             last_datetime = act_time
@@ -201,8 +197,37 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     month_names.append((point_xy_text, calendar.month_name[act_time.month]))
                     month_count += 1
 
+                # inc day count
+                day_idx += 1
+
+            else:
+                start_display = True
+
+        # re-set the last 'last' date/time to the one we've just processed
+        last_datetime = act_time
+
+
+    start_display = False
+    last_datetime = None
+    last_power_state = PowerStatus.PWR_OFF
+    last_x_pos = 0
+    day_idx = 0
+    strobe_day_idx = 0
+    sr_ss_idx = 0
+    process_day = False
+    for (act_time, power) in transition_seq:
+        if last_datetime is None:
+            last_datetime = act_time
+            continue
+
+        # see if we/ve gone over a midnight border
+        if ((last_datetime.month == act_time.month) and (last_datetime.day < act_time.day)) \
+         or ((last_datetime.month < act_time.month) and (act_time.day == 1)) \
+         or ((last_datetime.year < act_time.year) and (act_time.month == 1)):
+
+            if start_display:
                 # fill in to end of day (and beyond) if PWR is ON
-                if last_power_state == PowerStatus.PWR_ON:
+                if process_day and last_power_state == PowerStatus.PWR_ON:
                     minutes_so_far_today = day_minutes(act_time)
                     percentage_of_day = (minutes_so_far_today / (float(MINS_IN_DAY)))
                     current_width = int(day_width * percentage_of_day)
@@ -212,7 +237,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     rect_x1 = last_x_pos
                     rect_x2 = offset_x + day_width + current_width
                     rect_y1 = offset_y + (day_idx * day_height)
-                    rect_y2 = offset_y + ((day_idx + 1) * day_height)
+                    rect_y2 = offset_y + (strobe_day_idx * day_height)
                     rect_xy1 = (rect_x1, rect_y1)
                     rect_xy2 = (rect_x2, rect_y2)
                     draw.rectangle((rect_xy1, rect_xy2), fill=ON_COLOR)
@@ -227,7 +252,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     last_x_pos = offset_x
 
                 # draw on the sr/ss marker desired
-                if draw_sr_ss:
+                if process_day and draw_sr_ss:
                     sr_ss_times = ss_sr_seq[sr_ss_idx]
                     sr_dt = sr_ss_times[0]
                     ss_dt = sr_ss_times[1]
@@ -237,7 +262,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     current_width = int(day_width * percentage_of_day)
                     p_x = current_width + offset_x
                     p_y1 = offset_y + (day_idx * day_height)
-                    p_y2 = offset_y + ((day_idx + 1) * day_height)
+                    p_y2 = offset_y + (strobe_day_idx * day_height)
                     point_xy1 = (p_x, p_y1)
                     point_xy2 = (p_x, p_y2)
                     draw.line((point_xy1, point_xy2), SUN_COLOR, ss_sr_width)
@@ -247,7 +272,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     current_width = int(day_width * percentage_of_day)
                     p_x = current_width + offset_x
                     p_y1 = offset_y + (day_idx * day_height)
-                    p_y2 = offset_y + ((day_idx + 1) * day_height)
+                    p_y2 = offset_y + (strobe_day_idx * day_height)
                     point_xy1 = (p_x, p_y1)
                     point_xy2 = (p_x, p_y2)
                     draw.line((point_xy1, point_xy2), SUN_COLOR, ss_sr_width)
@@ -262,13 +287,28 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
             # sequence on-off profile
             sr_ss_idx += 1
 
+            # Check if we should start/end a new strobe session
+            if start_display:
+                # should we start
+                if day_idx >= strobe_day_idx:
+                    # we should start a new strobe session
+                    strobe_day_idx = day_idx + strobe
+                    process_day = True
+
+                # should we ignore
+                elif day_idx < strobe_day_idx:
+                    # we should start a new strobe session
+                    #strobe_day_idx = day_idx + strobe
+                    process_day = False
+
+
         # see if we're on the last day, in whic case we exit the loop
         if day_idx >= num_days:
             # we've collected all the days we're interested in, so exit
             break
 
         if start_display:
-            if act_time > last_datetime:
+            if process_day and (act_time > last_datetime):
                 minutes_so_far_today = day_minutes(act_time)
                 percentage_of_day = (minutes_so_far_today / (float(MINS_IN_DAY)))
                 current_width = int(day_width * percentage_of_day)
@@ -276,7 +316,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
                     rect_x1 = last_x_pos
                     rect_x2 = current_width + offset_x
                     rect_y1 = offset_y + (day_idx * day_height)
-                    rect_y2 = offset_y + ((day_idx + 1) * day_height)
+                    rect_y2 = offset_y + (strobe_day_idx * day_height)
                     rect_xy1 = (rect_x1, rect_y1)
                     rect_xy2 = (rect_x2, rect_y2)
                     draw.rectangle((rect_xy1, rect_xy2), fill=ON_COLOR)
