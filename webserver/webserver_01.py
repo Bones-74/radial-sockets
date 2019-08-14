@@ -152,6 +152,7 @@ def socket_state_info(socket_name):
                            config=relay_config,
                            state_entry=state_text[0],
                            script_entry= state_text[1],
+                           script_onload= state_text[2],
                            m_map=multi_day)
 
 @web_svr.route('/socket_info/<string:socket_name>',methods = ['GET'])
@@ -319,10 +320,63 @@ def get_table_row(status, titles, socket_name, template):
     return html_table_row
 
 def get_tabbox_for_state(cfg, skt_name):
-    html_for_state_X = state_html.format("_01")
+    CHECKED_STR = "checked"
+    SELECTED_STR = "selected"
+    DISABLED_STR = "disabled"
+    EMPTY_STR = ""
+    script_onload = ""
+    state_params = dict()
+    state_params['id'] = "_01"
+    state_params['bt_ON'] = CHECKED_STR
+    state_params['bt_OFF'] = EMPTY_STR
+
+    state_params['bt_REL'] = EMPTY_STR
+    state_params['bt_ABS'] = CHECKED_STR
+    state_params['bt_REL_SR'] = EMPTY_STR
+    state_params['bt_REL_SS'] = SELECTED_STR
+    state_params['bt_ABS_time'] = "09:00"
+    state_params['bt_OS_EN'] = EMPTY_STR
+    state_params['bt_OS_plus'] = EMPTY_STR
+    state_params['bt_OS_minus'] = CHECKED_STR
+    state_params['bt_OS_time'] = "00:45"
+    state_params['bt_REL_dd_disable'] = EMPTY_STR
+    state_params['bt_ABS_time_disable'] = EMPTY_STR
+    state_params['bt_OS_plus_disable'] = EMPTY_STR
+    state_params['bt_OS_minus_disable'] = EMPTY_STR
+    state_params['bt_OS_time_disable'] = EMPTY_STR
+
+    state_params['lim_ACT_EN'] = EMPTY_STR
+    state_params['lim_BFR'] = EMPTY_STR
+    state_params['lim_AFT'] = CHECKED_STR
+    state_params['lim_REL'] = EMPTY_STR
+    state_params['lim_ABS'] = CHECKED_STR
+    state_params['lim_REL_SR'] = EMPTY_STR
+    state_params['lim_REL_SS'] = SELECTED_STR
+    state_params['lim_ABS_time'] = "01:00"
+    state_params['lim_OS_EN'] = EMPTY_STR
+    state_params['lim_OS_plus'] = EMPTY_STR
+    state_params['lim_OS_minus'] = CHECKED_STR
+    state_params['lim_OS_time'] = "01:45"
+    state_params['lim_BFR_disable'] = DISABLED_STR
+    state_params['lim_AFT_disable'] = DISABLED_STR
+    state_params['lim_REL_disable'] = DISABLED_STR
+    state_params['lim_ABS_disable'] = DISABLED_STR
+    state_params['lim_REL_dd_disable'] = DISABLED_STR
+    state_params['lim_ABS_time_disable'] = DISABLED_STR
+    state_params['lim_OS_disable'] = DISABLED_STR
+    state_params['lim_OS_plus_disable'] = DISABLED_STR
+    state_params['lim_OS_minus_disable'] = DISABLED_STR
+    state_params['lim_OS_time_disable'] = DISABLED_STR
+
+    
+    
+    
+    
+    html_for_state_X = state_html.format(**state_params)
     script_for_state_X = state_script.format("_01")
 
-    return (html_for_state_X, script_for_state_X)
+    script_onload += "onload{}();".format("_01")
+    return (html_for_state_X, script_for_state_X, script_onload)
 
 
 if __name__ == '__main__':

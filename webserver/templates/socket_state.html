@@ -21,6 +21,11 @@
 
   <script>
     {{ script_entry | safe }}
+    window.onload = function () {
+      document.getElementById("demo").innerHTML = "monkey";
+      {{ script_onload | safe }}
+      document.getElementById("demo2").innerHTML = "bastard";
+    }
   </script>
    </body>
 </html>
