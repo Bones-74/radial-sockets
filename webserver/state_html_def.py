@@ -33,7 +33,7 @@ state_html = """
   <br>
 
   <fieldset>
-    <legend><input type="checkbox" id="ls-chkbox{id}" name="limitation-check{id}" value="checked" {lim_ACT_EN}>Limit Activation</legend>
+    <legend><input type="checkbox" id="ls-chkbox{id}" name="limitation-check{id}" {lim_ACT_EN}>Limit Activation</legend>
       Only apply if Base Time occurs
     <input type="radio" id="ls-bfr-radiobox{id}" name="ls-before-or-after{id}" value="before" {lim_BFR} > Before:  
     <input type="radio" id="ls-aft-radiobox{id}" name="ls-before-or-after{id}" value="after" {lim_AFT} > After:
@@ -111,34 +111,33 @@ function ls_os_chkbox{0}_onchange () {{
 function ls_chkbox{0}_onchange () {{
   if (ls_chkbox{0}.checked)
   {{
-    ls_os_chkbox{0}.disabled = 0
-    ls_bfr_radbox{0}.disabled = 0
-    ls_aft_radbox{0}.disabled = 0
-    ls_rel_radiobox{0}.disabled = 0
-    ls_abs_radiobox{0}.disabled = 0
-    ls_rel_dd{0}.disabled = !ls_rel_radiobox{0}.checked
-    ls_abs_ts{0}.disabled = !ls_abs_radiobox{0}.checked
-    ls_os_plus{0}.disabled = !ls_os_chkbox{0}.checked
-    ls_os_minus{0}.disabled = !ls_os_chkbox{0}.checked
-    ls_os_time{0}.disabled = !ls_os_chkbox{0}.checked
+    ls_os_chkbox{0}.disabled = 0;
+    ls_bfr_radbox{0}.disabled = 0;
+    ls_aft_radbox{0}.disabled = 0;
+    ls_rel_radiobox{0}.disabled = 0;
+    ls_abs_radiobox{0}.disabled = 0;
+    ls_rel_dd{0}.disabled = !ls_rel_radiobox{0}.checked;
+    ls_abs_ts{0}.disabled = !ls_abs_radiobox{0}.checked;
+    ls_os_plus{0}.disabled = !ls_os_chkbox{0}.checked;
+    ls_os_minus{0}.disabled = !ls_os_chkbox{0}.checked;
+    ls_os_time{0}.disabled = !ls_os_chkbox{0}.checked;
   }}
   else
   {{
-    ls_bfr_radbox{0}.disabled = 1
-    ls_aft_radbox{0}.disabled = 1
-    ls_rel_radiobox{0}.disabled = 1
-    ls_abs_radiobox{0}.disabled = 1
-    ls_rel_dd{0}.disabled = 1
-    ls_abs_ts{0}.disabled = 1
-    ls_os_chkbox{0}.disabled = 1
-    ls_os_plus{0}.disabled = 1
-    ls_os_minus{0}.disabled = 1
-    ls_os_time{0}.disabled = 1
+    ls_bfr_radbox{0}.disabled = 1;
+    ls_aft_radbox{0}.disabled = 1;
+    ls_rel_radiobox{0}.disabled = 1;
+    ls_abs_radiobox{0}.disabled = 1;
+    ls_rel_dd{0}.disabled = 1;
+    ls_abs_ts{0}.disabled = 1;
+    ls_os_chkbox{0}.disabled = 1;
+    ls_os_plus{0}.disabled = 1;
+    ls_os_minus{0}.disabled = 1;
+    ls_os_time{0}.disabled = 1;
   }}
 }}
 
 function onload{0} () {{
-  document.getElementById("demo1").innerHTML = "git";
   bt_rel_radiobox{0}_onchange();
   bt_abs_radiobox{0}_onchange();
   bt_os_chkbox{0}_onchange();

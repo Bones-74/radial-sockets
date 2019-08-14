@@ -6,6 +6,9 @@
 
     </head>
     <body>
+      <div>
+      {{ state_entry | safe }}
+      </div>
       <br><br>
       <div style="clear: left;">
           <p style="float: left;">
@@ -15,16 +18,12 @@
           <!-- output the states -->
           {% set socket_cfg = config.sockets [socket_name] %}
       </div>
-      <div>
-      {{ state_entry | safe }}
-      </div>
 
   <script>
     {{ script_entry | safe }}
-    window.onload = function () {
-      document.getElementById("demo").innerHTML = "monkey";
+
+   window.onload = function () {
       {{ script_onload | safe }}
-      document.getElementById("demo2").innerHTML = "bastard";
     }
   </script>
    </body>
