@@ -10,6 +10,7 @@ from boards.SimBoard import SimBoard
 from status import PowerStatus, OverrideStatus
 from Sun import get_sun
 from .state_html_def import state_html, state_script
+from activation_time import ActivationTime
 
 web_svr = Flask(__name__)
 
@@ -149,7 +150,7 @@ def socket_state_info(socket_name):
 
     return render_template('socket_state.html',
                            socket_name=socket_name,
-                           config=relay_config,
+                           socket_cfg=cfg_clone.sockets[socket_name],
                            state_entry=state_text[0],
                            script_entry= state_text[1],
                            script_onload= state_text[2],
@@ -320,62 +321,96 @@ def get_table_row(status, titles, socket_name, template):
     return html_table_row
 
 def get_tabbox_for_state(cfg, skt_name):
+    socket = cfg.sockets [skt_name]
     CHECKED_STR = "checked"
     SELECTED_STR = "selected"
-    DISABLED_STR = "disabled"
+    #DISABLED_STR = "disabled"
     EMPTY_STR = ""
     script_onload = ""
-    state_params = dict()
-    state_params['id'] = "_01"
-    state_params['bt_ON'] = CHECKED_STR
-    state_params['bt_OFF'] = EMPTY_STR
+    html_for_state_X = ""
+    script_for_state_X = ""
 
-    state_params['bt_REL'] = EMPTY_STR
-    state_params['bt_ABS'] = CHECKED_STR
-    state_params['bt_REL_SR'] = EMPTY_STR
-    state_params['bt_REL_SS'] = SELECTED_STR
-    state_params['bt_ABS_time'] = "09:00"
-    state_params['bt_OS_EN'] = EMPTY_STR
-    state_params['bt_OS_plus'] = EMPTY_STR
-    state_params['bt_OS_minus'] = CHECKED_STR
-    state_params['bt_OS_time'] = "00:45"
-    state_params['bt_REL_dd_disable'] = EMPTY_STR
-    state_params['bt_ABS_time_disable'] = EMPTY_STR
-    state_params['bt_OS_plus_disable'] = EMPTY_STR
-    state_params['bt_OS_minus_disable'] = EMPTY_STR
-    state_params['bt_OS_time_disable'] = EMPTY_STR
+    for state in socket.states:
+    #if True:
+        #state = socket.states[0]
 
-    state_params['lim_ACT_EN'] = EMPTY_STR
-    state_params['lim_BFR'] = EMPTY_STR
-    state_params['lim_AFT'] = CHECKED_STR
-    state_params['lim_REL'] = EMPTY_STR
-    state_params['lim_ABS'] = CHECKED_STR
-    state_params['lim_REL_SR'] = EMPTY_STR
-    state_params['lim_REL_SS'] = SELECTED_STR
-    state_params['lim_ABS_time'] = "01:00"
-    state_params['lim_OS_EN'] = EMPTY_STR
-    state_params['lim_OS_plus'] = EMPTY_STR
-    state_params['lim_OS_minus'] = CHECKED_STR
-    state_params['lim_OS_time'] = "01:45"
-    state_params['lim_BFR_disable'] = DISABLED_STR
-    state_params['lim_AFT_disable'] = DISABLED_STR
-    state_params['lim_REL_disable'] = DISABLED_STR
-    state_params['lim_ABS_disable'] = DISABLED_STR
-    state_params['lim_REL_dd_disable'] = DISABLED_STR
-    state_params['lim_ABS_time_disable'] = DISABLED_STR
-    state_params['lim_OS_disable'] = DISABLED_STR
-    state_params['lim_OS_plus_disable'] = DISABLED_STR
-    state_params['lim_OS_minus_disable'] = DISABLED_STR
-    state_params['lim_OS_time_disable'] = DISABLED_STR
+        # init the keys to empty
+        state_params = dict()
+        state_params['id'] = str(state.id)
+        state_params['bt_ON'] = EMPTY_STR
+        state_params['bt_OFF'] = EMPTY_STR
+        state_params['bt_REL'] = EMPTY_STR
+        state_params['bt_ABS'] = EMPTY_STR
+        state_params['bt_ABS_time'] = "09:00"
+        state_params['bt_REL_SR'] = EMPTY_STR
+        state_params['bt_REL_SS'] = EMPTY_STR
+        state_params['bt_OS_EN'] = EMPTY_STR
+        state_params['bt_OS_plus'] = EMPTY_STR
+        state_params['bt_OS_minus'] = EMPTY_STR
+        state_params['bt_OS_time'] = "00:30"
+        state_params['lim_ACT_EN'] = EMPTY_STR
+        state_params['lim_BFR'] = EMPTY_STR
+        state_params['lim_AFT'] = EMPTY_STR
+        state_params['lim_REL'] = EMPTY_STR
+        state_params['lim_ABS'] = EMPTY_STR
+        state_params['lim_REL_SR'] = EMPTY_STR
+        state_params['lim_REL_SS'] = EMPTY_STR
+        state_params['lim_ABS_time'] = "01:00"
+        state_params['lim_OS_EN'] = EMPTY_STR
+        state_params['lim_OS_plus'] = EMPTY_STR
+        state_params['lim_OS_minus'] = EMPTY_STR
+        state_params['lim_OS_time'] = "01:45"
 
-    
-    
-    
-    
-    html_for_state_X = state_html.format(**state_params)
-    script_for_state_X = state_script.format("_01")
+        if state.power_state == PowerStatus.PWR_ON:
+            state_params['bt_ON'] = CHECKED_STR
+        else:
+            state_params['bt_OFF'] = CHECKED_STR
 
-    script_onload += "onload{}();".format("_01")
+        if state.activation_time.basetime['base'] == ActivationTime.SUNRISE_STR or \
+           state.activation_time.basetime['base'] == ActivationTime.SUNSET_STR:
+            state_params['bt_REL'] = CHECKED_STR
+            state_params['bt_ABS_time'] = "09:00"
+            if state.activation_time.basetime['base'] == ActivationTime.SUNRISE_STR:
+                state_params['bt_REL_SR'] = SELECTED_STR
+            else:
+                state_params['bt_REL_SS'] = SELECTED_STR
+
+        else:
+            state_params['bt_REL'] = EMPTY_STR
+            state_params['bt_ABS'] = CHECKED_STR
+            state_params['bt_ABS_time'] = state.activation_time.basetime['base']
+
+        if state.activation_time.basetime['mod']:
+            state_params['bt_OS_EN'] = CHECKED_STR
+            mod_str =  str(state.activation_time.basetime['mod'])
+            if mod_str[0] == '-':
+                state_params['bt_OS_minus'] = CHECKED_STR
+                time_str = mod_str[1:]
+            else:
+                state_params['bt_OS_plus'] = CHECKED_STR
+                time_str = mod_str
+
+            state_params['bt_OS_time'] = time_str
+#        else:
+#            state_params['bt_OS_plus'] = CHECKED_STR
+
+        state_params['lim_ACT_EN'] = EMPTY_STR
+        state_params['lim_BFR'] = EMPTY_STR
+        state_params['lim_AFT'] = CHECKED_STR
+        state_params['lim_REL'] = EMPTY_STR
+        state_params['lim_ABS'] = CHECKED_STR
+        state_params['lim_REL_SR'] = EMPTY_STR
+        state_params['lim_REL_SS'] = SELECTED_STR
+        state_params['lim_ABS_time'] = "01:00"
+        state_params['lim_OS_EN'] = EMPTY_STR
+        state_params['lim_OS_plus'] = EMPTY_STR
+        state_params['lim_OS_minus'] = CHECKED_STR
+        state_params['lim_OS_time'] = "01:45"
+
+        html_for_state_X += state_html.format(**state_params)
+        script_for_state_X += state_script.format(state_params['id'])
+
+        script_onload += "onload{}();".format(state_params['id'])
     return (html_for_state_X, script_for_state_X, script_onload)
 
 

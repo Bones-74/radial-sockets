@@ -1,6 +1,6 @@
 app
 {
-  update_timer 10
+  update_timer 1000
   webserver_port 30080
   location -1.82:52.9
   front-panel-present 0

@@ -5,6 +5,7 @@ Created on 11 Aug 2019
 '''
 
 state_html = """
+<div id="tab_content_{id}" class="tabcontent">
   <fieldset>
     <legend>Base Time:</legend>
     <div>Turn
@@ -24,7 +25,7 @@ state_html = """
       <br>
     </div>
     <fieldset>
-      <legend><input type="checkbox" id="bt-os-chkbox{id}" name="main-offset-check{id}" value="{bt_OS_EN}"> Offset:</legend>
+      <legend><input type="checkbox" id="bt-os-chkbox{id}" name="main-offset-check{id}" {bt_OS_EN}> Offset:</legend>
         <input type="radio" id="bt-os-plus{id}" name="base-offset-plus-minus{id}" value="plus" {bt_OS_plus} > +
         <input type="radio" id="bt-os-minus{id}" name="base-offset-plus-minus{id}" value="minus" {bt_OS_minus}> -
       &emsp;&emsp;<input type="time" id="bt-os-time{id}" name="base-offset{id}" Value="{bt_OS_time}">
@@ -50,12 +51,13 @@ state_html = """
       <br>
     </div>
     <fieldset>
-      <legend><input type="checkbox" id="ls-os-chkbox{id}" name="ls-offset-check{id}" value="checked" {lim_OS_EN} > Offset:</legend>
+      <legend><input type="checkbox" id="ls-os-chkbox{id}" name="ls-offset-check{id}" {lim_OS_EN} > Offset:</legend>
         <input type="radio" id="ls-os-plus{id}" name="ls-offset-plus-minus{id}" value="plus" {lim_OS_plus}> +
         <input type="radio" id="ls-os-minus{id}" name="ls-offset-plus-minus{id}" value="minus" {lim_OS_minus}> -
       &emsp;&emsp;<input type="time" id="ls-os-time{id}" name="ls-offset{id}" Value="{lim_OS_time}" >
     </fieldset>
   </fieldset>
+</div>
 """
 
 state_script = """
@@ -63,6 +65,22 @@ var bt_rel_radiobox{0} = document.getElementById('bt-rel-radiobox{0}');
 var bt_abs_radiobox{0} = document.getElementById('bt-abs-radiobox{0}');
 var bt_rel_dd{0} = document.getElementById('bt-rel-dd{0}');
 var bt_abs_ts{0} = document.getElementById('bt-abs-ts{0}');
+var bt_os_chkbox{0} = document.getElementById('bt-os-chkbox{0}');
+var bt_os_plus{0} = document.getElementById('bt-os-plus{0}');
+var bt_os_minus{0} = document.getElementById('bt-os-minus{0}');
+var bt_os_time{0} = document.getElementById('bt-os-time{0}');
+var ls_rel_radiobox{0} = document.getElementById('ls-rel-radiobox{0}');
+var ls_abs_radiobox{0} = document.getElementById('ls-abs-radiobox{0}');
+var ls_rel_dd{0} = document.getElementById('ls-rel-dd{0}');
+var ls_abs_ts{0} = document.getElementById('ls-abs-ts{0}');
+var ls_os_chkbox{0} = document.getElementById('ls-os-chkbox{0}');
+var ls_os_plus{0} = document.getElementById('ls-os-plus{0}');
+var ls_os_minus{0} = document.getElementById('ls-os-minus{0}');
+var ls_os_time{0} = document.getElementById('ls-os-time{0}');
+var ls_chkbox{0} = document.getElementById('ls-chkbox{0}');
+var ls_bfr_radbox{0} = document.getElementById('ls-bfr-radiobox{0}');
+var ls_aft_radbox{0} = document.getElementById('ls-aft-radiobox{0}');
+
 function bt_rel_radiobox{0}_onchange () {{
   bt_rel_dd{0}.disabled = !bt_rel_radiobox{0}.checked;
   bt_abs_ts{0}.disabled = bt_rel_radiobox{0}.checked;
@@ -72,20 +90,12 @@ function bt_abs_radiobox{0}_onchange () {{
   bt_abs_ts{0}.disabled = !bt_abs_radiobox{0}.checked;
 }}
 
-var bt_os_chkbox{0} = document.getElementById('bt-os-chkbox{0}');
-var bt_os_plus{0} = document.getElementById('bt-os-plus{0}');
-var bt_os_minus{0} = document.getElementById('bt-os-minus{0}');
-var bt_os_time{0} = document.getElementById('bt-os-time{0}');
 function bt_os_chkbox{0}_onchange () {{
   bt_os_plus{0}.disabled = !bt_os_chkbox{0}.checked;
   bt_os_minus{0}.disabled = !bt_os_chkbox{0}.checked;
   bt_os_time{0}.disabled = !bt_os_chkbox{0}.checked;
 }}
 
-var ls_rel_radiobox{0} = document.getElementById('ls-rel-radiobox{0}');
-var ls_abs_radiobox{0} = document.getElementById('ls-abs-radiobox{0}');
-var ls_rel_dd{0} = document.getElementById('ls-rel-dd{0}');
-var ls_abs_ts{0} = document.getElementById('ls-abs-ts{0}');
 function ls_rel_radiobox{0}_onchange () {{
   ls_rel_dd{0}.disabled = !ls_rel_radiobox{0}.checked;
   ls_abs_ts{0}.disabled = ls_rel_radiobox{0}.checked;
@@ -95,13 +105,6 @@ function ls_abs_radiobox{0}_onchange () {{
   ls_abs_ts{0}.disabled = !ls_abs_radiobox{0}.checked;
 }}
 
-var ls_os_chkbox{0} = document.getElementById('ls-os-chkbox{0}');
-var ls_os_plus{0} = document.getElementById('ls-os-plus{0}');
-var ls_os_minus{0} = document.getElementById('ls-os-minus{0}');
-var ls_os_time{0} = document.getElementById('ls-os-time{0}');
-var ls_chkbox{0} = document.getElementById('ls-chkbox{0}');
-var ls_bfr_radbox{0} = document.getElementById('ls-bfr-radiobox{0}');
-var ls_aft_radbox{0} = document.getElementById('ls-aft-radiobox{0}');
 function ls_os_chkbox{0}_onchange () {{
   ls_os_plus{0}.disabled = !ls_os_chkbox{0}.checked;
   ls_os_minus{0}.disabled = !ls_os_chkbox{0}.checked;

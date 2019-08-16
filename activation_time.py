@@ -4,10 +4,10 @@ import random
 from Sun import get_sun
 from time_utils import time_now, ParseSimpleTime, AssignAsLocalTime, ConvertUtcToLocalTime, ConvertLocalToUtcTime
 
-SUNRISE_STR = 'sr'
-SUNSET_STR = 'ss'
-
 class ActivationTime(object):
+    SUNRISE_STR = 'sr'
+    SUNSET_STR = 'ss'
+
     reset_time = AssignAsLocalTime(datetime.datetime.min + datetime.timedelta(days=100))
     def __init__(self, basetime, floor, ceiling):
 
@@ -67,7 +67,7 @@ class ActivationTime(object):
         modifier = time_dict  ["mod"]
         rand = time_dict  ["rand"]
 
-        if basetime.strip() == SUNSET_STR:
+        if basetime.strip() == ActivationTime.SUNSET_STR:
             sunset_lcl = sun.getSunsetTimeLocal(date=timenow)
             sunset_utc = sun.getSunsetTimeUtc(date=timenow)
             basetime_utc = sunset_utc
@@ -76,7 +76,7 @@ class ActivationTime(object):
             minutes = sunset_lcl.minute
             basetime_lcl = timenow.replace(hour=hours, minute=minutes, second=0, microsecond=0)
 
-        elif basetime.strip() == SUNRISE_STR:
+        elif basetime.strip() == ActivationTime.SUNRISE_STR:
             sunrise_lcl = sun.getSunriseTimeLocal(date=timenow)
             sunrise_utc = sun.getSunriseTimeUtc(date=timenow)
             basetime_utc = sunrise_utc
@@ -198,7 +198,7 @@ class ActivationTime(object):
 
         # now test each component for correctness before we try and use it
         for time_val_str in (base, time_mod, time_rand):
-            if time_val_str == SUNSET_STR or time_val_str == SUNRISE_STR:
+            if time_val_str == ActivationTime.SUNSET_STR or time_val_str == ActivationTime.SUNRISE_STR:
                 continue
             elif time_val_str:
                 (parse_ok, _hrs, _mins) =  ParseSimpleTime(time_val_str, enforce_strict=True)
