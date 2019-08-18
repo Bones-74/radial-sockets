@@ -320,12 +320,11 @@ def get_table_row(status, titles, socket_name, template):
                    + auto_ovr_cell
     return html_table_row
 
+CHECKED_STR = "checked"
+SELECTED_STR = "selected"
+EMPTY_STR = ""
 def get_tabbox_for_state(cfg, skt_name):
     socket = cfg.sockets [skt_name]
-    CHECKED_STR = "checked"
-    SELECTED_STR = "selected"
-    #DISABLED_STR = "disabled"
-    EMPTY_STR = ""
     script_onload = ""
     html_for_state_X = ""
     script_for_state_X = ""
@@ -333,79 +332,11 @@ def get_tabbox_for_state(cfg, skt_name):
     for state in socket.states:
     #if True:
         #state = socket.states[0]
-
-        # init the keys to empty
-        state_params = dict()
+        state_params = init_state_params()
         state_params['id'] = str(state.id)
-        state_params['bt_ON'] = EMPTY_STR
-        state_params['bt_OFF'] = EMPTY_STR
-        state_params['bt_REL'] = EMPTY_STR
-        state_params['bt_ABS'] = EMPTY_STR
-        state_params['bt_ABS_time'] = "09:00"
-        state_params['bt_REL_SR'] = EMPTY_STR
-        state_params['bt_REL_SS'] = EMPTY_STR
-        state_params['bt_OS_EN'] = EMPTY_STR
-        state_params['bt_OS_plus'] = EMPTY_STR
-        state_params['bt_OS_minus'] = EMPTY_STR
-        state_params['bt_OS_time'] = "00:30"
-        state_params['lim_ACT_EN'] = EMPTY_STR
-        state_params['lim_BFR'] = EMPTY_STR
-        state_params['lim_AFT'] = EMPTY_STR
-        state_params['lim_REL'] = EMPTY_STR
-        state_params['lim_ABS'] = EMPTY_STR
-        state_params['lim_REL_SR'] = EMPTY_STR
-        state_params['lim_REL_SS'] = EMPTY_STR
-        state_params['lim_ABS_time'] = "01:00"
-        state_params['lim_OS_EN'] = EMPTY_STR
-        state_params['lim_OS_plus'] = EMPTY_STR
-        state_params['lim_OS_minus'] = EMPTY_STR
-        state_params['lim_OS_time'] = "01:45"
 
-        if state.power_state == PowerStatus.PWR_ON:
-            state_params['bt_ON'] = CHECKED_STR
-        else:
-            state_params['bt_OFF'] = CHECKED_STR
-
-        if state.activation_time.basetime['base'] == ActivationTime.SUNRISE_STR or \
-           state.activation_time.basetime['base'] == ActivationTime.SUNSET_STR:
-            state_params['bt_REL'] = CHECKED_STR
-            state_params['bt_ABS_time'] = "09:00"
-            if state.activation_time.basetime['base'] == ActivationTime.SUNRISE_STR:
-                state_params['bt_REL_SR'] = SELECTED_STR
-            else:
-                state_params['bt_REL_SS'] = SELECTED_STR
-
-        else:
-            state_params['bt_REL'] = EMPTY_STR
-            state_params['bt_ABS'] = CHECKED_STR
-            state_params['bt_ABS_time'] = state.activation_time.basetime['base']
-
-        if state.activation_time.basetime['mod']:
-            state_params['bt_OS_EN'] = CHECKED_STR
-            mod_str =  str(state.activation_time.basetime['mod'])
-            if mod_str[0] == '-':
-                state_params['bt_OS_minus'] = CHECKED_STR
-                time_str = mod_str[1:]
-            else:
-                state_params['bt_OS_plus'] = CHECKED_STR
-                time_str = mod_str
-
-            state_params['bt_OS_time'] = time_str
-#        else:
-#            state_params['bt_OS_plus'] = CHECKED_STR
-
-        state_params['lim_ACT_EN'] = EMPTY_STR
-        state_params['lim_BFR'] = EMPTY_STR
-        state_params['lim_AFT'] = CHECKED_STR
-        state_params['lim_REL'] = EMPTY_STR
-        state_params['lim_ABS'] = CHECKED_STR
-        state_params['lim_REL_SR'] = EMPTY_STR
-        state_params['lim_REL_SS'] = SELECTED_STR
-        state_params['lim_ABS_time'] = "01:00"
-        state_params['lim_OS_EN'] = EMPTY_STR
-        state_params['lim_OS_plus'] = EMPTY_STR
-        state_params['lim_OS_minus'] = CHECKED_STR
-        state_params['lim_OS_time'] = "01:45"
+        set_basetime_info (state_params, state)
+        set_limitationtime_info (state_params, state)
 
         html_for_state_X += state_html.format(**state_params)
         script_for_state_X += state_script.format(state_params['id'])
@@ -413,6 +344,105 @@ def get_tabbox_for_state(cfg, skt_name):
         script_onload += "onload{}();".format(state_params['id'])
     return (html_for_state_X, script_for_state_X, script_onload)
 
+def init_state_params():
+    # init the keys to empty
+    state_params = dict()
+    state_params['bt_ON'] = EMPTY_STR
+    state_params['bt_OFF'] = EMPTY_STR
+    state_params['bt_REL'] = EMPTY_STR
+    state_params['bt_ABS'] = EMPTY_STR
+    state_params['bt_ABS_time'] = "09:00"
+    state_params['bt_REL_SR'] = EMPTY_STR
+    state_params['bt_REL_SS'] = EMPTY_STR
+    state_params['bt_OS_EN'] = EMPTY_STR
+    state_params['bt_OS_plus'] = EMPTY_STR
+    state_params['bt_OS_minus'] = EMPTY_STR
+    state_params['bt_OS_time'] = "00:30"
+    state_params['lim_ACT_EN'] = EMPTY_STR
+    state_params['lim_BFR'] = EMPTY_STR
+    state_params['lim_AFT'] = EMPTY_STR
+    state_params['lim_REL'] = EMPTY_STR
+    state_params['lim_ABS'] = EMPTY_STR
+    state_params['lim_REL_SR'] = EMPTY_STR
+    state_params['lim_REL_SS'] = EMPTY_STR
+    state_params['lim_ABS_time'] = "01:00"
+    state_params['lim_OS_EN'] = EMPTY_STR
+    state_params['lim_OS_plus'] = EMPTY_STR
+    state_params['lim_OS_minus'] = EMPTY_STR
+    state_params['lim_OS_time'] = "01:45"
+
+    return state_params
+
+def set_basetime_info (state_params, state):
+    if state.power_state == PowerStatus.PWR_ON:
+        state_params['bt_ON'] = CHECKED_STR
+    else:
+        state_params['bt_OFF'] = CHECKED_STR
+
+    if state.activation_time.basetime['base'] == ActivationTime.SUNRISE_STR or \
+       state.activation_time.basetime['base'] == ActivationTime.SUNSET_STR:
+        state_params['bt_REL'] = CHECKED_STR
+        if state.activation_time.basetime['base'] == ActivationTime.SUNRISE_STR:
+            state_params['bt_REL_SR'] = SELECTED_STR
+        else:
+            state_params['bt_REL_SS'] = SELECTED_STR
+
+    else:
+        state_params['bt_ABS'] = CHECKED_STR
+        state_params['bt_ABS_time'] = state.activation_time.basetime['base']
+
+    if state.activation_time.basetime['mod']:
+        state_params['bt_OS_EN'] = CHECKED_STR
+        mod_str =  str(state.activation_time.basetime['mod'])
+        if mod_str[0] == '-':
+            state_params['bt_OS_minus'] = CHECKED_STR
+            time_str = mod_str[1:]
+        else:
+            state_params['bt_OS_plus'] = CHECKED_STR
+            time_str = mod_str
+
+        state_params['bt_OS_time'] = time_str
+
+def set_limitationtime_info (state_params, state):
+    # See if a limit is active
+    if state.activation_time.ceilingtime or \
+       state.activation_time.floortime:
+        state_params['lim_ACT_EN'] = CHECKED_STR
+    else:
+        return
+
+    # we know that one is active, so set the before/after radio accordingly
+    if state.activation_time.ceilingtime:
+        state_params['lim_BFR'] = CHECKED_STR
+        limittime = state.activation_time.ceilingtime
+    else:
+        state_params['lim_AFT'] = CHECKED_STR
+        limittime = state.activation_time.floortime
+
+    # now set the rest of the panel
+    if limittime['base'] == ActivationTime.SUNRISE_STR or \
+       limittime['base'] == ActivationTime.SUNSET_STR:
+        state_params['lim_REL'] = CHECKED_STR
+        if limittime['base'] == ActivationTime.SUNRISE_STR:
+            state_params['lim_REL_SR'] = SELECTED_STR
+        else:
+            state_params['lim_REL_SS'] = SELECTED_STR
+
+    else:
+        state_params['lim_ABS'] = CHECKED_STR
+        state_params['lim_ABS_time'] = limittime['base']
+
+    if limittime['mod']:
+        state_params['lim_OS_EN'] = CHECKED_STR
+        mod_str =  str(limittime['mod'])
+        if mod_str[0] == '-':
+            state_params['lim_OS_minus'] = CHECKED_STR
+            time_str = mod_str[1:]
+        else:
+            state_params['lim_OS_plus'] = CHECKED_STR
+            time_str = mod_str
+
+        state_params['lim_OS_time'] = time_str
 
 if __name__ == '__main__':
     web_svr.run()

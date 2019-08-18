@@ -1,4 +1,4 @@
-SnugRHS
+gdn06
 {
   state 1
   # [on/off]
@@ -11,7 +11,7 @@ SnugRHS
   override-t-until None
 }
 
-gdn06
+SnugLHS
 {
   state 1
   # [on/off]
@@ -76,9 +76,9 @@ gdn04
   override-t-until None
 }
 
-frnt03
+SnugRHS
 {
-  state 3
+  state 1
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
@@ -89,9 +89,9 @@ frnt03
   override-t-until None
 }
 
-SnugLHS
+frnt03
 {
-  state 1
+  state 3
   # [on/off]
   auto-status  off
   # [inactive, session-on, session-off, force-on, force-off]
