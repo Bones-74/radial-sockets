@@ -118,14 +118,15 @@ def socket_state_info(socket_name):
 
     cfg_clone = relay_config.clone()
     if request.method == 'POST':
-        if request.form['submit_button'] == 'Update':
-            pass # do something
-        elif request.form['submit_button'] == 'Apply':
-            pass # do something else
-        elif request.form['submit_button'] == 'Cancel':
-            pass # do something else
-        else:
-            pass # unknown
+        pass
+        #if request.form['Apply'] == 'Update':
+        #    pass # do something
+        #elif request.form['Apply'] == 'Apply':
+        #    pass # do something else
+        #elif request.form['submit_button'] == 'Cancel':
+        #    pass # do something else
+        #else:
+        #    pass # unknown
 
     elif request.method == 'GET':
         pass
