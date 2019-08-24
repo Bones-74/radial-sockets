@@ -403,6 +403,8 @@ def set_basetime_info (state_params, state):
             time_str = mod_str
 
         state_params['bt_OS_time'] = time_str
+    else:
+        state_params['bt_OS_minus'] = CHECKED_STR
 
 def set_limitationtime_info (state_params, state):
     # See if a limit is active
@@ -410,6 +412,8 @@ def set_limitationtime_info (state_params, state):
        state.activation_time.floortime:
         state_params['lim_ACT_EN'] = CHECKED_STR
     else:
+        state_params['lim_REL'] = CHECKED_STR
+        state_params['lim_OS_minus'] = CHECKED_STR
         return
 
     # we know that one is active, so set the before/after radio accordingly
