@@ -6,6 +6,8 @@ Created on 11 Aug 2019
 
 state_html = """
 <div id="tab_content_{id}" class="tabcontent">
+  <input type="checkbox" id="state-active{id}" name="state-active{id}" checked> Use this state
+  <input type="number" id="idx{id}" name="index{id}" val="-1">  index
   <fieldset>
     <legend>Base Time:</legend>
     <div>Turn
@@ -15,7 +17,7 @@ state_html = """
     <br>
     <div>
       <input type="radio" id="bt-rel-radiobox{id}" name="base-abs-or-rel{id}" value="rel" {bt_REL}> Relative:  
-      <select id="bt-rel-dd{id}" >
+      <select id="bt-rel-dd{id}" name="bt-rel-type{id}" >
          <option value="sr" {bt_REL_SR}>Sunrise</option>
          <option value="ss" {bt_REL_SS}>Sunset</option>
       </select>
@@ -42,7 +44,7 @@ state_html = """
     <br>
     <div>
       <input type="radio" id="ls-rel-radiobox{id}" name="ls-abs-or-rel{id}" value="rel"  {lim_REL}> Relative:  
-        <select id="ls-rel-dd{id}" >
+        <select id="ls-rel-dd{id}" name="ls-rel-type{id}" >
           <option value="sr" {lim_REL_SR}>Sunrise</option>
           <option value="ss" {lim_REL_SS}>Sunset</option>
       </select><br>
@@ -61,6 +63,10 @@ state_html = """
 """
 
 state_script = """
+var tb_state_active{0} = document.getElementById('tb-state-active{0}');
+var state_active{0} = document.getElementById('state-active{0}');
+var bt_on_radiobox{0} = document.getElementById('bt-on-radiobox{0}');
+var bt_off_radiobox{0} = document.getElementById('bs-off-radiobox{0}');
 var bt_rel_radiobox{0} = document.getElementById('bt-rel-radiobox{0}');
 var bt_abs_radiobox{0} = document.getElementById('bt-abs-radiobox{0}');
 var bt_rel_dd{0} = document.getElementById('bt-rel-dd{0}');
@@ -78,8 +84,8 @@ var ls_os_plus{0} = document.getElementById('ls-os-plus{0}');
 var ls_os_minus{0} = document.getElementById('ls-os-minus{0}');
 var ls_os_time{0} = document.getElementById('ls-os-time{0}');
 var ls_chkbox{0} = document.getElementById('ls-chkbox{0}');
-var ls_bfr_radbox{0} = document.getElementById('ls-bfr-radiobox{0}');
-var ls_aft_radbox{0} = document.getElementById('ls-aft-radiobox{0}');
+var ls_bfr_radiobox{0} = document.getElementById('ls-bfr-radiobox{0}');
+var ls_aft_radiobox{0} = document.getElementById('ls-aft-radiobox{0}');
 
 function bt_rel_radiobox{0}_onchange () {{
   bt_rel_dd{0}.disabled = !bt_rel_radiobox{0}.checked;
@@ -111,12 +117,97 @@ function ls_os_chkbox{0}_onchange () {{
   ls_os_time{0}.disabled = !ls_os_chkbox{0}.checked;
 }}
 
+function enable{0} () {{
+    bt_on_radiobox{0}.disabled = 0;
+    bt_off_radiobox{0}.disabled = 0;
+    bt_rel_radiobox{0}.disabled = 0;
+    bt_abs_radiobox{0}.disabled = 0;
+    bt_rel_dd{0}.disabled = 0;
+    bt_abs_ts{0}.disabled = 0;
+    bt_os_chkbox{0}.disabled = 0;
+    bt_os_plus{0}.disabled = 0;
+    bt_os_minus{0}.disabled = 0;
+    bt_os_time{0}.disabled = 0;
+    ls_chkbox{0}.disabled = 0;
+    ls_bfr_radiobox{0}.disabled = 0;
+    ls_aft_radiobox{0}.disabled = 0;
+    ls_rel_radiobox{0}.disabled = 0;
+    ls_abs_radiobox{0}.disabled = 0;
+    ls_rel_dd{0}.disabled = 0;
+    ls_abs_ts{0}.disabled = 0;
+    ls_os_chkbox{0}.disabled = 0;
+    ls_os_plus{0}.disabled = 0;
+    ls_os_minus{0}.disabled = 0;
+    ls_os_time{0}.disabled = 0;
+
+  bt_rel_radiobox{0}_onchange();
+  bt_abs_radiobox{0}_onchange();
+  bt_os_chkbox{0}_onchange();
+  ls_rel_radiobox{0}_onchange();
+  ls_abs_radiobox{0}_onchange();
+  ls_os_chkbox{0}_onchange();
+  ls_chkbox{0}_onchange();
+}}
+
+function disable_bt{0} () {{
+    bt_on_radiobox{0}.disabled = 1;
+    bt_off_radiobox{0}.disabled = 1;
+    bt_rel_radiobox{0}.disabled = 1;
+    bt_abs_radiobox{0}.disabled = 1;
+    bt_rel_dd{0}.disabled = 1;
+    bt_abs_ts{0}.disabled = 1;
+    bt_os_chkbox{0}.disabled = 1;
+    bt_os_plus{0}.disabled = 1;
+    bt_os_minus{0}.disabled = 1;
+    bt_os_time{0}.disabled = 1;
+}}
+
+function disable_ls{0} () {{
+    ls_chkbox{0}.disabled = 1;
+    ls_bfr_radiobox{0}.disabled = 1;
+    ls_aft_radiobox{0}.disabled = 1;
+    ls_rel_radiobox{0}.disabled = 1;
+    ls_abs_radiobox{0}.disabled = 1;
+    ls_rel_dd{0}.disabled = 1;
+    ls_abs_ts{0}.disabled = 1;
+    ls_os_chkbox{0}.disabled = 1;
+    ls_os_plus{0}.disabled = 1;
+    ls_os_minus{0}.disabled = 1;
+    ls_os_time{0}.disabled = 1;
+}}
+
+function tb_state_active{0}_onchange () {{
+  state_active{0}.checked = tb_state_active{0}.checked;
+  if (tb_state_active{0}.checked)
+  {{
+      enable{0}();
+  }}
+  else
+  {{
+      disable_bt{0}();
+      disable_ls{0}();
+  }}
+}}
+
+function state_active{0}_onchange () {{
+  tb_state_active{0}.checked = state_active{0}.checked;
+  if (tb_state_active{0}.checked)
+  {{
+      enable{0}();
+  }}
+  else
+  {{
+      disable_bt{0}();
+      disable_ls{0}();
+  }}
+}}
+
 function ls_chkbox{0}_onchange () {{
   if (ls_chkbox{0}.checked)
   {{
     ls_os_chkbox{0}.disabled = 0;
-    ls_bfr_radbox{0}.disabled = 0;
-    ls_aft_radbox{0}.disabled = 0;
+    ls_bfr_radiobox{0}.disabled = 0;
+    ls_aft_radiobox{0}.disabled = 0;
     ls_rel_radiobox{0}.disabled = 0;
     ls_abs_radiobox{0}.disabled = 0;
     ls_rel_dd{0}.disabled = !ls_rel_radiobox{0}.checked;
@@ -127,27 +218,12 @@ function ls_chkbox{0}_onchange () {{
   }}
   else
   {{
-    ls_bfr_radbox{0}.disabled = 1;
-    ls_aft_radbox{0}.disabled = 1;
-    ls_rel_radiobox{0}.disabled = 1;
-    ls_abs_radiobox{0}.disabled = 1;
-    ls_rel_dd{0}.disabled = 1;
-    ls_abs_ts{0}.disabled = 1;
-    ls_os_chkbox{0}.disabled = 1;
-    ls_os_plus{0}.disabled = 1;
-    ls_os_minus{0}.disabled = 1;
-    ls_os_time{0}.disabled = 1;
+    disable_ls{0}();
   }}
 }}
 
 function onload{0} () {{
-  bt_rel_radiobox{0}_onchange();
-  bt_abs_radiobox{0}_onchange();
-  bt_os_chkbox{0}_onchange();
-  ls_rel_radiobox{0}_onchange();
-  ls_abs_radiobox{0}_onchange();
-  ls_os_chkbox{0}_onchange();
-  ls_chkbox{0}_onchange();
+  tb_state_active{0}_onchange();
 }}
 
 bt_rel_radiobox{0}.onchange = function() {{bt_rel_radiobox{0}_onchange()}};
@@ -157,5 +233,8 @@ ls_rel_radiobox{0}.onchange = function() {{ls_rel_radiobox{0}_onchange()}};
 ls_abs_radiobox{0}.onchange = function() {{ls_abs_radiobox{0}_onchange()}};
 ls_os_chkbox{0}.onchange = function() {{ls_os_chkbox{0}_onchange()}};
 ls_chkbox{0}.onchange = function() {{ls_chkbox{0}_onchange()}};
+state_active{0}.onchange = function() {{state_active{0}_onchange()}};
+tb_state_active{0}.onchange = function() {{tb_state_active{0}_onchange()}};
+
 
 """

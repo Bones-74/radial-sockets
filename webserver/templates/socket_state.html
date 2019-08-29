@@ -1,18 +1,76 @@
 <!doctype html>
 <html>
     <head>
-    <title>Rose House state screen</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-     <style>
-     * {box-sizing: border-box}
-    
+      <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+      <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+      <script>
+      $( function() {
+        $( "#sortable" ).sortable();
+        $( "#sortable" ).disableSelection();
+      } );
+      </script>
+      <title>Rose House state screen</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+[draggable] {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Required to make elements draggable in old WebKit */
+  -khtml-user-drag: element;
+  -webkit-user-drag: element;
+}
+
+#columns {
+  list-style-type: none;
+}
+
+.column {
+  /*width: 162px;*/
+  padding-bottom: 5px;
+  padding-top: 5px;
+  text-align: left;
+  cursor: move;
+}
+.column header {
+  height: 20px;
+  /*width: 150px;*/
+  color: black;
+  background-color: #ccc;
+  padding: 5px;
+  border-bottom: 1px solid #ddd;
+  border-radius: 10px;
+  border: 2px solid #666666;
+}
+
+.column.dragElem {
+  opacity: 0.4;
+}
+.column.over {
+  //border: 2px dashed #000;
+  border-top: 2px solid blue;
+}
+</style>
+      <style>
+        #div1 {
+          
+          padding: 10px;
+          border: 1px solid #aaaaaa;
+        }
+
+        #sortable { list-style-type: none; margin: 0; padding: 0; width: 60%; }
+        #sortable li { margin: 10px 10px; padding: 0.4em; padding-left: 1.5em; font-size: 1.4em; height: 18px; }
+        #sortable li span { position: absolute; margin-left: -1.3em; }
+        * {box-sizing: border-box}
+
         /* Style the tab */
         .tab {
           float: left;
           border: 1px solid #ccc;
           background-color: #f1f1f1;
           width: 30%;
-          height: 450px;
+          height: 500px;
         }
         
         /* Style the buttons that are used to open the tab content */
@@ -20,7 +78,7 @@
           display: block;
           background-color: inherit;
           color: black;
-          padding: 22px 16px;
+          padding: 5px 16px;
           width: 100%;
           border: none;
           outline: none;
@@ -46,19 +104,45 @@
           border: 1px solid #ccc;
           width: 70%;
           border-left: none;
-          height: 450px;
+          height: 500px;
         }
         </style>
     </head>
     <body>
-      {% for state in socket_cfg.states %}
-        <p>{{ state.state_txt }}  :  {{ state.power_state }} @ {{ state.activation_time.activation_time_lcl.time() }} </p>
-      {% endfor %}
-
-     <div class="tab">
+     <!--div class="tab"-->
+     <div id="div1" >
+      <!--ul id="sortable"-->
+      <ul id="columns">
+        {% set tab_id = namespace(val=0)  %}
         {% for state in socket_cfg.states %}
-           <button class="tablinks" id="tab_button_{{state.id}}" onclick="openCity(event, 'tab_content_{{state.id}}')">{{state.id}}</button>
+           <!--<button class="tablinks" id="tab_button_{{tab_id.val}}" onclick="openCity(event, this.id, 'tab_content_{{tab_id.val}}')">
+               <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}">
+           </button>-->
+           <!--li class="ui-state-default" onmouseover="thisindex(this);">
+                <span class="ui-icon ui-icon-arrowthick-2-n-s"-->
+           <li class="column" draggable="true">
+           <div>
+            &#x2b65;
+               <button class="tablinks" id="tab_button_{{tab_id.val}}" onclick="openCity(event, this.id, 'tab_content_{{tab_id.val}}')">
+                 <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}" checked>{{ state.state_txt }}
+               </button>
+             <!--/span-->
+             </div>
+           </li>
+           {% set tab_id.val = tab_id.val + 1 %}
         {% endfor %}
+        <!--li class="ui-state-default">
+          <span class="ui-icon ui-icon-arrowthick-2-n-s"-->
+        <li class="column" draggable="true">
+          <div>
+            &#x2b65;
+            <button class="tablinks" id="tab_button_{{tab_id.val}}" onclick="openCity(event, this.id, 'tab_content_{{tab_id.val}}')">
+              <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}">
+            </button>
+          <!--/span-->
+          <div>
+        </li>
+      </ul>
      </div>
       <form action="" method="post">
          {{ state_entry | safe }}
@@ -75,6 +159,8 @@
       </div>
 
    <script>
+   var last_clicked_button;
+  
     {{ script_entry | safe }}
 
 
@@ -85,9 +171,16 @@
 
      }
      
-function openCity(evt, cityName) {
+function openCity(evt, btn_id, cityName) {
   // Declare all variables
   var i, tabcontent, tablinks;
+  
+  // decolor last button, re-color new....
+  if (typeof last_clicked_button !== 'undefined') {
+    last_clicked_button.style.backgroundColor = '#D3D3D3';
+  } 
+  last_clicked_button = document.getElementById(btn_id);
+  last_clicked_button.style.backgroundColor = '#a6a6a6';
 
   // Get all elements with class="tabcontent" and hide them
   tabcontent = document.getElementsByClassName("tabcontent");
@@ -106,6 +199,130 @@ function openCity(evt, cityName) {
   evt.currentTarget.className += " active";
 }
 
+   </script>
+   <script>
+   function GetIndex(sender)
+{  
+   var aElements = sender.parentNode.parentNode.getElementsByTagName("header");
+    var aElementsLength = aElements.length;
+
+
+    if (aElements == 0)
+    {
+        aElements = sender.parentNode.parentNode.getElementsByTagName("a")
+    }
+   
+    var index;
+    for (var i = 0; i < aElementsLength; i++)
+    {
+        if (aElements[i] == sender) //this condition is never true
+        {
+            index = i;
+            document.getElementById("demo").innerHTML = index;
+            return index;
+        }
+    }
+}
+
+function UpdateIndex()
+{  
+    var listitems = document.getElementById('columns');
+    /*var aElements = listitems.parentNode.getElementsById("li");*/
+    var aElementsLength = listitems.childElementCount;
+
+    /*var id = */
+    var index;
+    for (var i = 0; i < aElementsLength; i++)
+    {
+        var button_id =  listitems.children[i].children[0].children[0].id
+        var res = button_id.split("tab_button_");
+        var id = res [1]
+        var input_index_str = "idx".concat(id)
+        var aStateInfo = document.getElementById(input_index_str);
+        aStateInfo.value = i
+    }
+}
+
+
+var dragSrcEl = null;
+
+function handleDragStart(e) {
+  // Target (this) element is the source node.
+  dragSrcEl = this;
+
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/html', this.outerHTML);
+
+  this.classList.add('dragElem');
+}
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault(); // Necessary. Allows us to drop.
+  }
+  this.classList.add('over');
+
+  e.dataTransfer.dropEffect = 'move';  // See the section on the DataTransfer object.
+
+  return false;
+}
+
+function handleDragEnter(e) {
+  // this / e.target is the current hover target.
+}
+
+function handleDragLeave(e) {
+  this.classList.remove('over');  // this / e.target is previous target element.
+}
+
+function handleDrop(e) {
+  // this/e.target is current target element.
+
+  if (e.stopPropagation) {
+    e.stopPropagation(); // Stops some browsers from redirecting.
+  }
+
+  // Don't do anything if dropping the same column we're dragging.
+  if (dragSrcEl != this) {
+    // Set the source column's HTML to the HTML of the column we dropped on.
+    //alert(this.outerHTML);
+    //dragSrcEl.innerHTML = this.innerHTML;
+    //this.innerHTML = e.dataTransfer.getData('text/html');
+    this.parentNode.removeChild(dragSrcEl);
+    var dropHTML = e.dataTransfer.getData('text/html');
+    this.insertAdjacentHTML('beforebegin',dropHTML);
+    var dropElem = this.previousSibling;
+    addDnDHandlers(dropElem);
+   
+  }
+  this.classList.remove('over');
+
+
+  UpdateIndex()
+
+  return false;
+}
+
+function handleDragEnd(e) {
+  // this/e.target is the source node.
+  this.classList.remove('over');
+
+  /*[].forEach.call(cols, function (col) {
+    col.classList.remove('over');
+  });*/
+}
+
+function addDnDHandlers(elem) {
+  elem.addEventListener('dragstart', handleDragStart, false);
+  elem.addEventListener('dragenter', handleDragEnter, false)
+  elem.addEventListener('dragover', handleDragOver, false);
+  elem.addEventListener('dragleave', handleDragLeave, false);
+  elem.addEventListener('drop', handleDrop, false);
+  elem.addEventListener('dragend', handleDragEnd, false);
+
+}
+
+var cols = document.querySelectorAll('#columns .column');
+[].forEach.call(cols, addDnDHandlers);
    </script>
  </body>
 </html>

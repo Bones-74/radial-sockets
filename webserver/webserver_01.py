@@ -11,6 +11,7 @@ from status import PowerStatus, OverrideStatus
 from Sun import get_sun
 from .state_html_def import state_html, state_script
 from activation_time import ActivationTime
+from config import SocketState
 
 web_svr = Flask(__name__)
 
@@ -23,8 +24,9 @@ SINGLE_DAY_MAP_FN = 'sday'
 MULTI_DAY_MAP_FN = 'mday'
 
 
-host_addr = "192.168.1.127"
-#host_addr = "127.0.0.1"
+#host_addr = "192.168.1.127"
+host_addr = "127.0.0.1"
+#host_addr = "*"
 host_port = "30080"
 websvr = "{}:{}".format(host_addr, host_port)
 
@@ -118,15 +120,12 @@ def socket_state_info(socket_name):
 
     cfg_clone = relay_config.clone()
     if request.method == 'POST':
-        pass
-        #if request.form['Apply'] == 'Update':
-        #    pass # do something
-        #elif request.form['Apply'] == 'Apply':
-        #    pass # do something else
-        #elif request.form['submit_button'] == 'Cancel':
-        #    pass # do something else
-        #else:
-        #    pass # unknown
+        states = ProcessStates(request.form, len(relay_config.sockets[socket_name].states))
+        if 'Apply' in request.form:
+            skt = relay_config.sockets[socket_name]
+        elif 'Test' in request.form:
+            skt = cfg_clone.sockets[socket_name]
+        skt.states = states
 
     elif request.method == 'GET':
         pass
@@ -156,6 +155,63 @@ def socket_state_info(socket_name):
                            script_entry= state_text[1],
                            script_onload= state_text[2],
                            m_map=multi_day)
+
+def ProcessStates(state_def, num_states):
+    state_id = 0
+    states_text = []
+    state_text = ""
+
+    count = num_states + (num_states + 1)
+    while count:
+        count -= 1
+        if "state-active{}".format(state_id) in state_def:
+            if "bt-on-or-off{}".format(state_id) in state_def:
+                if state_def["bt-on-or-off{}".format(state_id)] == "1":
+                    state_text += " on @"
+                else:
+                    state_text += " off @"
+
+                if state_def["base-abs-or-rel{}".format(state_id)] == "rel":
+                    state_text += " {}".format(state_def["bt-rel-type{}".format(state_id)])
+                else:
+                    state_text += " {}".format(state_def["base-abs-time{}".format(state_id)])
+
+                if "main-offset-check{}".format(state_id) in state_def:
+                    if state_def["main-offset-check{}".format(state_id)] == "on":
+                        if state_def["base-offset-plus-minus{}".format(state_id)] == "plus":
+                            state_text += " + {}".format(state_def["base-offset{}".format(state_id)])
+                        else:
+                            state_text += " - {}".format(state_def["base-offset{}".format(state_id)])
+
+                # Now process the limitaion side of things
+                if "limitation-check{}".format(state_id) in state_def:
+                    if state_def["ls-before-or-after{}".format(state_id)] == "after":
+                        state_text += " if after"
+                    else:
+                        state_text += " if before"
+
+                    if state_def["ls-abs-or-rel{}".format(state_id)] == "rel":
+                        state_text += " {}".format(state_def["ls-rel-type{}".format(state_id)])
+                    else:
+                        state_text += " {}".format(state_def["ls-abs-time{}".format(state_id)])
+
+                    if "ls-offset-check{}".format(state_id) in state_def:
+                        if state_def["ls-offset-plus-minus{}".format(state_id)] == "plus":
+                            state_text += " + {}".format(state_def["ls-offset{}".format(state_id)])
+                        else:
+                            state_text += " - {}".format(state_def["ls-offset{}".format(state_id)])
+
+
+                states_text.append(state_text)
+
+            else:
+                break;
+
+        state_text = ""
+        state_id += 1
+
+    states = SocketState.parse_states(states_text)
+    return states
 
 @web_svr.route('/socket_info/<string:socket_name>',methods = ['GET'])
 def socket_info(socket_name):
@@ -330,20 +386,50 @@ def get_tabbox_for_state(cfg, skt_name):
     html_for_state_X = ""
     script_for_state_X = ""
 
+    # We want to introduce a blank/empty sate for use between the states
+    state_id = 0
     for state in socket.states:
-    #if True:
-        #state = socket.states[0]
+#        # add the dummy/empty state
+#        state_params = default_state_params()
+#        state_params['id'] = state_id
+#
+#        html_for_state_X += state_html.format(**state_params)
+#        script_for_state_X += state_script.format(state_params['id'])
+#        script_onload += "onload{}();\n".format(state_params['id'])
+#
+        # Now add the real state
         state_params = init_state_params()
-        state_params['id'] = str(state.id)
+        state_params['id'] = state_id
 
         set_basetime_info (state_params, state)
         set_limitationtime_info (state_params, state)
 
         html_for_state_X += state_html.format(**state_params)
         script_for_state_X += state_script.format(state_params['id'])
+        script_onload += "onload{}();\n".format(state_params['id'])
 
-        script_onload += "onload{}();".format(state_params['id'])
+        state_id = state_id + 1
+
+    # add last dummy/empty state
+    state_params = default_state_params()
+    state_params['id'] = state_id
+
+    html_for_state_X += state_html.format(**state_params)
+    script_for_state_X += state_script.format(state_params['id'])
+    script_onload += "onload{}();".format(state_params['id'])
+
     return (html_for_state_X, script_for_state_X, script_onload)
+
+def default_state_params():
+    # set to default valid values
+    state_params = init_state_params()
+    state_params['bt_ON'] = CHECKED_STR
+    state_params['bt_REL'] = CHECKED_STR
+    state_params['bt_OS_plus'] = CHECKED_STR
+    state_params['lim_BFR'] = CHECKED_STR
+    state_params['lim_REL'] = CHECKED_STR
+    state_params['lim_OS_plus'] = CHECKED_STR
+    return state_params
 
 def init_state_params():
     # init the keys to empty
