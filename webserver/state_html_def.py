@@ -7,7 +7,7 @@ Created on 11 Aug 2019
 state_html = """
 <div id="tab_content_{id}" class="tabcontent">
   <input type="checkbox" id="state-active{id}" name="state-active{id}" checked> Use this state
-  <input type="number" id="idx{id}" name="index{id}" val="-1">  index
+  <input type="number" id="idx{id}" name="index{id}" val="-1" hidden>
   <fieldset>
     <legend>Base Time:</legend>
     <div>Turn
@@ -163,7 +163,6 @@ function disable_bt{0} () {{
 }}
 
 function disable_ls{0} () {{
-    ls_chkbox{0}.disabled = 1;
     ls_bfr_radiobox{0}.disabled = 1;
     ls_aft_radiobox{0}.disabled = 1;
     ls_rel_radiobox{0}.disabled = 1;
@@ -186,6 +185,7 @@ function tb_state_active{0}_onchange () {{
   {{
       disable_bt{0}();
       disable_ls{0}();
+      ls_chkbox{0}.disabled = 1;
   }}
 }}
 
@@ -199,6 +199,7 @@ function state_active{0}_onchange () {{
   {{
       disable_bt{0}();
       disable_ls{0}();
+      ls_chkbox{0}.disabled = 1;
   }}
 }}
 

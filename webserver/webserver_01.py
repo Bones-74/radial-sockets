@@ -120,7 +120,7 @@ def socket_state_info(socket_name):
 
     cfg_clone = relay_config.clone()
     if request.method == 'POST':
-        states = ProcessStates(request.form, len(relay_config.sockets[socket_name].states))
+        states = ProcessStates(request.form)
         if 'Apply' in request.form:
             skt = relay_config.sockets[socket_name]
         elif 'Test' in request.form:
@@ -156,16 +156,25 @@ def socket_state_info(socket_name):
                            script_onload= state_text[2],
                            m_map=multi_day)
 
-def ProcessStates(state_def, num_states):
+def ProcessStates(state_def):
     state_id = 0
-    states_text = []
+    states_dict = dict()
     state_text = ""
 
-    count = num_states + (num_states + 1)
+    # shouldn't have more than 20 states
+    count = 20
     while count:
         count -= 1
-        if "state-active{}".format(state_id) in state_def:
-            if "bt-on-or-off{}".format(state_id) in state_def:
+        if "tb-state-del{}".format(state_id) in state_def:
+            # delete this state- essentially, do'nt bother process it.
+            # a pass is good enough here- the 'elif' will not be run
+            pass
+
+        elif "state-active{}".format(state_id) in state_def:
+            if not state_def["index{}".format(state_id)]:
+                # index field is empty so ignore this pass
+                pass
+            elif "bt-on-or-off{}".format(state_id) in state_def:
                 if state_def["bt-on-or-off{}".format(state_id)] == "1":
                     state_text += " on @"
                 else:
@@ -202,13 +211,23 @@ def ProcessStates(state_def, num_states):
                             state_text += " - {}".format(state_def["ls-offset{}".format(state_id)])
 
 
-                states_text.append(state_text)
+                state_idx = state_def["index{}".format(state_id)]
+                states_dict [state_idx] = state_text
 
             else:
                 break;
 
         state_text = ""
         state_id += 1
+
+    states_text = []
+    index = 0
+    for count in range(len(states_dict)):
+        while str(index) not in states_dict:
+            index += 1
+
+        states_text.append(states_dict[str(index)])
+        index += 1
 
     states = SocketState.parse_states(states_text)
     return states
