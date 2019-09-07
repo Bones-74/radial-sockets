@@ -51,7 +51,7 @@ def get_on_off_times(start_date, end_date, config, socket_name):
         for state in socket_cfg.states:
             activation_time = state.activation_time.activation_time_lcl
             # if activation_time is None, then this state is not active
-            if (activation_time):
+            if activation_time and state.active:
                 record_for_today = True
                 power = state.power_state
                 transition_seq.append((activation_time, power))

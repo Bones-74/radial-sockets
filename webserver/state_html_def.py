@@ -6,7 +6,7 @@ Created on 11 Aug 2019
 
 state_html = """
 <div id="tab_content_{id}" class="tabcontent">
-  <input type="checkbox" id="state-active{id}" name="state-active{id}" checked> Use this state
+  <input type="checkbox" id="state-active{id}" name="state-active{id}" {active}> Use this state
   <input type="number" id="idx{id}" name="index{id}" val="-1" hidden>
   <fieldset>
     <legend>Base Time:</legend>
@@ -177,30 +177,30 @@ function disable_ls{0} () {{
 
 function tb_state_active{0}_onchange () {{
   state_active{0}.checked = tb_state_active{0}.checked;
-  if (tb_state_active{0}.checked)
-  {{
-      enable{0}();
-  }}
-  else
-  {{
-      disable_bt{0}();
-      disable_ls{0}();
-      ls_chkbox{0}.disabled = 1;
-  }}
+//  if (tb_state_active{0}.checked)
+//  {{
+//      enable{0}();
+//  }}
+//  else
+//  {{
+//      disable_bt{0}();
+//      disable_ls{0}();
+//      ls_chkbox{0}.disabled = 1;
+//  }}
 }}
 
 function state_active{0}_onchange () {{
   tb_state_active{0}.checked = state_active{0}.checked;
-  if (tb_state_active{0}.checked)
-  {{
-      enable{0}();
-  }}
-  else
-  {{
-      disable_bt{0}();
-      disable_ls{0}();
-      ls_chkbox{0}.disabled = 1;
-  }}
+//  if (tb_state_active{0}.checked)
+//  {{
+//      enable{0}();
+//  }}
+//  else
+//  {{
+//      disable_bt{0}();
+//      disable_ls{0}();
+//      ls_chkbox{0}.disabled = 1;
+//  }}
 }}
 
 function ls_chkbox{0}_onchange () {{

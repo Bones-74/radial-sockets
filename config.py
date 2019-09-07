@@ -197,8 +197,16 @@ class Socket(object):
         self.mon_auto_on = {}
         self.control_pwr = {}
 
+        self.refresh_day_image = False
+
         #self.current_state = STATE_NOT_ASSIGNED
         #self.current_pwr_state = STATE_NOT_ASSIGNED
+
+    def invalidate_image(self):
+        self.refresh_day_image = True
+
+    def refresh_image(self):
+        return self.refresh_day_image
 
     def reset_state_activation_time(self):
         for state in self.states:
@@ -235,7 +243,7 @@ class Socket(object):
         next_state = self.states [-1]
         for state in self.states:
             state_start_datetime = state.activation_time.update_activation_time(timenow)
-            if state_start_datetime:
+            if state.active and state_start_datetime:
                 state_start = state_start_datetime.time()
                 if state_start and state_start <= timenow.time():
                     next_state = state
@@ -265,18 +273,22 @@ class Socket(object):
         skt_.mon_auto_on  = self.mon_auto_on.clone()
         skt_.control_pwr  = self.control_pwr.clone()
 
+        skt_.refresh_day_image = self.refresh_day_image
+
         return skt_
 
 class SocketState(object):
-    def __init__(self, s_id, power_state, activation_time, state_txt):
+    INACTIVE_TEXT = 'disabled'
+    def __init__(self, active, s_id, power_state, activation_time, state_txt):
         self.id = int (s_id)
         self.power_state = power_state
         self.activation_time = activation_time
         self.state_txt = state_txt
+        self.active = active
 
     def clone (self):
         act_time_clone = self.activation_time.clone()
-        skt_ = SocketState (self.id, self.power_state, act_time_clone, self.state_txt)
+        skt_ = SocketState (self.active, self.id, self.power_state, act_time_clone, self.state_txt)
         return skt_
 
     def reset_activation_time(self):
@@ -284,6 +296,16 @@ class SocketState(object):
 
     @staticmethod
     def parse_state (state_id, state_txt):
+        # split on the '|'- if present, the first part is a flag to declare if the state is active or not
+        # else assume active.  The rest is the state definition
+        state_active = True
+        line_parts = state_txt.split('|')
+        if len(line_parts) == 2:
+            if line_parts[0].strip() == SocketState.INACTIVE_TEXT:
+                state_active = False
+            state_txt = line_parts [1]
+
+
         # split on the '@'- the first part is the stat id and the power
         # setting and the second is the time to switch to this state
         line_parts = state_txt.split('@')
@@ -312,7 +334,7 @@ class SocketState(object):
         else:
             power_id = None
 
-        ss = SocketState(state_id, power_id, activatation_time, state_txt)
+        ss = SocketState(state_active, state_id, power_id, activatation_time, state_txt)
         return ss
 
     @staticmethod

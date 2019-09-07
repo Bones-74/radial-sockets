@@ -122,10 +122,14 @@ def socket_state_info(socket_name):
     if request.method == 'POST':
         states = ProcessStates(request.form)
         if 'Apply' in request.form:
+            relay_config.sockets[socket_name].invalidate_image()
             skt = relay_config.sockets[socket_name]
+            skt.states = states
+            skt = cfg_clone.sockets[socket_name]
+            skt.states = states
         elif 'Test' in request.form:
             skt = cfg_clone.sockets[socket_name]
-        skt.states = states
+            skt.states = states
 
     elif request.method == 'GET':
         pass
@@ -168,54 +172,57 @@ def ProcessStates(state_def):
         if "tb-state-del{}".format(state_id) in state_def:
             # delete this state- essentially, do'nt bother process it.
             # a pass is good enough here- the 'elif' will not be run
-            pass
+            continue
 
-        elif "state-active{}".format(state_id) in state_def:
-            if not state_def["index{}".format(state_id)]:
-                # index field is empty so ignore this pass
-                pass
-            elif "bt-on-or-off{}".format(state_id) in state_def:
-                if state_def["bt-on-or-off{}".format(state_id)] == "1":
-                    state_text += " on @"
-                else:
-                    state_text += " off @"
+        if "index{}".format(state_id) not in state_def:
+            # index field is empty so ignore this pass
+            continue
 
-                if state_def["base-abs-or-rel{}".format(state_id)] == "rel":
-                    state_text += " {}".format(state_def["bt-rel-type{}".format(state_id)])
-                else:
-                    state_text += " {}".format(state_def["base-abs-time{}".format(state_id)])
+        if "state-active{}".format(state_id) not in state_def:
+            state_text += " disabled |"
 
-                if "main-offset-check{}".format(state_id) in state_def:
-                    if state_def["main-offset-check{}".format(state_id)] == "on":
-                        if state_def["base-offset-plus-minus{}".format(state_id)] == "plus":
-                            state_text += " + {}".format(state_def["base-offset{}".format(state_id)])
-                        else:
-                            state_text += " - {}".format(state_def["base-offset{}".format(state_id)])
-
-                # Now process the limitaion side of things
-                if "limitation-check{}".format(state_id) in state_def:
-                    if state_def["ls-before-or-after{}".format(state_id)] == "after":
-                        state_text += " if after"
-                    else:
-                        state_text += " if before"
-
-                    if state_def["ls-abs-or-rel{}".format(state_id)] == "rel":
-                        state_text += " {}".format(state_def["ls-rel-type{}".format(state_id)])
-                    else:
-                        state_text += " {}".format(state_def["ls-abs-time{}".format(state_id)])
-
-                    if "ls-offset-check{}".format(state_id) in state_def:
-                        if state_def["ls-offset-plus-minus{}".format(state_id)] == "plus":
-                            state_text += " + {}".format(state_def["ls-offset{}".format(state_id)])
-                        else:
-                            state_text += " - {}".format(state_def["ls-offset{}".format(state_id)])
-
-
-                state_idx = state_def["index{}".format(state_id)]
-                states_dict [state_idx] = state_text
-
+        if "bt-on-or-off{}".format(state_id) in state_def:
+            if state_def["bt-on-or-off{}".format(state_id)] == "1":
+                state_text += " on @"
             else:
-                break;
+                state_text += " off @"
+
+            if state_def["base-abs-or-rel{}".format(state_id)] == "rel":
+                state_text += " {}".format(state_def["bt-rel-type{}".format(state_id)])
+            else:
+                state_text += " {}".format(state_def["base-abs-time{}".format(state_id)])
+
+            if "main-offset-check{}".format(state_id) in state_def:
+                if state_def["main-offset-check{}".format(state_id)] == "on":
+                    if state_def["base-offset-plus-minus{}".format(state_id)] == "plus":
+                        state_text += " + {}".format(state_def["base-offset{}".format(state_id)])
+                    else:
+                        state_text += " - {}".format(state_def["base-offset{}".format(state_id)])
+
+            # Now process the limitaion side of things
+            if "limitation-check{}".format(state_id) in state_def:
+                if state_def["ls-before-or-after{}".format(state_id)] == "after":
+                    state_text += " if after"
+                else:
+                    state_text += " if before"
+
+                if state_def["ls-abs-or-rel{}".format(state_id)] == "rel":
+                    state_text += " {}".format(state_def["ls-rel-type{}".format(state_id)])
+                else:
+                    state_text += " {}".format(state_def["ls-abs-time{}".format(state_id)])
+
+                if "ls-offset-check{}".format(state_id) in state_def:
+                    if state_def["ls-offset-plus-minus{}".format(state_id)] == "plus":
+                        state_text += " + {}".format(state_def["ls-offset{}".format(state_id)])
+                    else:
+                        state_text += " - {}".format(state_def["ls-offset{}".format(state_id)])
+
+
+            state_idx = state_def["index{}".format(state_id)]
+            states_dict [state_idx] = state_text
+
+        else:
+            break;
 
         state_text = ""
         state_id += 1
@@ -258,7 +265,7 @@ def socket_info(socket_name):
     end_date = time_now_lcl + datetime.timedelta(days = 100)
 
     mday_base_file = Path(multi_day_full)
-    if not mday_base_file.exists():
+    if not mday_base_file.exists() or cfg_clone.sockets[socket_name].refresh_image():
         print_days_image(multi_day_full, start_date, end_date, cfg_clone, socket_name, day_height=2)
 
     multi_day_full_ovrlay = multi_day_fullbase + "_overlay.png"
@@ -421,6 +428,8 @@ def get_tabbox_for_state(cfg, skt_name):
         # Now add the real state
         state_params = init_state_params()
         state_params['id'] = state_id
+        if state.active:
+            state_params['active'] = CHECKED_STR
 
         set_basetime_info (state_params, state)
         set_limitationtime_info (state_params, state)
@@ -455,6 +464,7 @@ def default_state_params():
 def init_state_params():
     # init the keys to empty
     state_params = dict()
+    state_params['active'] = EMPTY_STR
     state_params['bt_ON'] = EMPTY_STR
     state_params['bt_OFF'] = EMPTY_STR
     state_params['bt_REL'] = EMPTY_STR

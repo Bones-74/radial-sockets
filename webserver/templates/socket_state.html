@@ -153,7 +153,8 @@
             <div>
               &#x2b65;
               <button class="tablinks" id="tab_button_{{tab_id.val}}" onclick="openCity(event, this.id, 'tab_content_{{tab_id.val}}')">
-                <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}" checked>{{ state.state_txt }}
+                <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}" 
+                {% if state.active %} checked {% endif %}>{{ state.state_txt }}
               </button>
               <input type="checkbox" id="tb-state-del{{tab_id.val}}" name="tb-state-del{{tab_id.val}}" form="state-def-form" >delete
             </div>
