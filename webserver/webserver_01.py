@@ -278,6 +278,7 @@ def socket_info(socket_name):
     cfg_clone = relay_config.clone()
     sun = get_sun()
     suntimes = (sun.getSunriseTimeLocal(), sun.getSunsetTimeLocal())
+    state_link = '<a href="http://{1}/socket_info/{0}/state">'.format(socket_name, websvr)
 
     return render_template('socket_info.html',
                            time_str=time_now_lcl_str,
@@ -287,7 +288,8 @@ def socket_info(socket_name):
                            config=relay_config,
                            titles = titles,
                            m_map=multi_day,
-                           socket_links=socket_links)
+                           socket_links=socket_links,
+                           state_link=state_link)
 #                           pwr_map=on_map[0],
 #                           ovr_map=full_on_map)
 

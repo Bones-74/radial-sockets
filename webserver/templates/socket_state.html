@@ -155,7 +155,7 @@
               <button class="tablinks" id="tab_button_{{tab_id.val}}" onclick="openCity(event, this.id, 'tab_content_{{tab_id.val}}')">
                 <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}" checked>{{ state.state_txt }}
               </button>
-              <input type="checkbox" id="tb-state-del{{tab_id.val}}" name="tb-state-del{{tab_id.val}}" form="state-def-form" >
+              <input type="checkbox" id="tb-state-del{{tab_id.val}}" name="tb-state-del{{tab_id.val}}" form="state-def-form" >delete
             </div>
             </li>
              {% set tab_id.val = tab_id.val + 1 %}
@@ -166,7 +166,7 @@
               <button class="tablinks" id="tab_button_{{tab_id.val}}" onclick="openCity(event, this.id, 'tab_content_{{tab_id.val}}')">
                 <input type="checkbox" id="tb-state-active{{tab_id.val}}" name="tb-state-active{{tab_id.val}}">
               </button>
-              <input type="checkbox" id="tb-state-del{{tab_id.val}}" name="tb-state-del{{tab_id.val}}" form="state-def-form" checked>
+              <input type="checkbox" id="tb-state-del{{tab_id.val}}" name="tb-state-del{{tab_id.val}}" form="state-def-form" checked>delete
             <div>
           </li>
         </ul>

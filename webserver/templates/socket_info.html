@@ -29,6 +29,7 @@
           </p>
           <br>
           <!-- output the states -->
+          {{ state_link|safe  }}
           {% set socket_cfg = config.sockets [socket_name] %}
           {% for state in socket_cfg.states %}
               <p>{{ state.state_txt }}  :  {{ state.power_state }} @ {{ state.activation_time.activation_time_lcl.time() }} </p>
