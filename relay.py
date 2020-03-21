@@ -19,7 +19,7 @@ from webserver.webserver_01 import web_svr, webserver_set_config_status
 # ############################################################
 # ############debugging start#################################
 # ############################################################
-DEBUG=True
+DEBUG=False
 if DEBUG:
     sys.path.append(r'/home/pi/pysrc')
     import pydevd

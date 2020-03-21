@@ -9,20 +9,39 @@ app
 board
 {
   name b1
-  type ada_ft232h
-  #type SIM
+  #type ada_ft232h
+  type SIM
   port /dev/ttyUSB0
   num-chan 16
 }
 
 board
 {
-  name b2
+  name io-0
+  type mcp23017
+  #type SIM
+  port 0x20
+  num-chan 16
+}
+
+board
+{
+  name io-1
   type mcp23017
   #type SIM
   port 0x21
   num-chan 16
 }
+
+board
+{
+  name io-2
+  type mcp23017
+  #type SIM
+  port 0x20
+  num-chan 16
+}
+
 
 active-list
 {
@@ -41,19 +60,19 @@ socket
   name SnugLHS
   control_pwr
   {
-     board b1
-     channel 08
+     board io-0
+     channel 4
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 04
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      channel 05
   }
   # on at 30mins before sunrise; random 5mins (27:30 - 32:30) if before 8am (or at 08:00)
@@ -71,19 +90,19 @@ socket
   name SnugRHS
   control_pwr
   {
-     board b1
-     channel 09
+     board io-0
+     channel 05
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 06
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      channel 07
      sense active-low
   }
@@ -107,20 +126,20 @@ socket
   name frnt03
   control_pwr
   {
-     board b2
-     channel 04
+     board io-0
+     channel 06
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      #channel 3
      channel 15
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      channel 01
      sense active-low
   }
@@ -145,19 +164,19 @@ socket
   name gdn04
   control_pwr
   {
-     board b2
-     channel 5
+     board io-0
+     channel 07
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      #channel 10
      channel 02
      sense active-low
@@ -179,19 +198,19 @@ socket
   name gdn05
   control_pwr
   {
-     board b2
-     channel 6
+     board io-0
+     channel 00
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      #channel 10
      channel 02
      sense active-low
@@ -214,19 +233,19 @@ socket
   name gdn06
   control_pwr
   {
-     board b2
-     channel 7
+     board io-0
+     channel 01
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      #channel 10
      channel 02
      sense active-low
@@ -249,19 +268,19 @@ socket
   name gdn07
   control_pwr
   {
-     board b1
-     channel 10
+     board io-0
+     channel 02
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      #channel 10
      channel 02
      sense active-low
@@ -284,19 +303,19 @@ socket
   name gdn08
   control_pwr
   {
-     board b1
-     channel 11
+     board io-0
+     channel 03
      sense active-low
   }
   monitor_socket
   {
-     board b1
+     board io-1
      channel 00
      sense active-low
   }
   monitor_hw_ovr_on
   {
-     board b1
+     board io-2
      #channel 10
      channel 02
      sense active-low

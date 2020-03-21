@@ -127,7 +127,7 @@ def socket_info(socket_name):
     time_now_utc = time_now()
     time_now_lcl = ConvertUtcToLocalTime(time_now_utc)
     time_now_lcl_str = time_now_lcl.strftime("%Y-%m-%d %H:%M:%S")
-    fn_time_lcl_str = time_now_lcl.strftime("%Y%m%d")
+    fn_time_lcl_str = time_now_lcl.strftime("%Y%m")
 
     skt_sday_base = "{}_{}_{}".format(fn_time_lcl_str, socket_name, SINGLE_DAY_MAP_FN)
     skt_mday_base = "{}_{}_{}".format(fn_time_lcl_str, socket_name, MULTI_DAY_MAP_FN)
@@ -154,7 +154,7 @@ def socket_info(socket_name):
 
     multi_day_full_ovrlay = multi_day_fullbase + "_overlay.png"
     multi_day = multi_day + "_overlay.png"
-    overlay_current_day(multi_day_full, multi_day_full_ovrlay, start_date, end_date, cfg_clone, socket_name, day_height=2, current_day=time_now_lcl)
+    overlay_current_day(multi_day_full, multi_day_full_ovrlay, start_date, end_date, cfg_clone, socket_name, time_now_lcl, day_height=2)
 
 
     sts_clone = relay_status.clone()

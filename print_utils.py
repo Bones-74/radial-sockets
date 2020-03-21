@@ -299,7 +299,7 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     img.save(fn)
 
 
-def overlay_current_day(fn, fn_ovr, start_date, end_date, config, socket_name, image_width=800, day_height=5, current_day=None):
+def overlay_current_day(fn, fn_ovr, start_date, end_date, config, socket_name, current_day, image_width=800, day_height=5):
     # start/finish one day before/efter the required time frame
     # We do not print the img_start_date, but collect info on it so we know the starting
     # power for the 'real' start_date
@@ -320,7 +320,7 @@ def overlay_current_day(fn, fn_ovr, start_date, end_date, config, socket_name, i
     # build up the image day-by-day
     draw = ImageDraw.Draw(img)
     last_datetime = None
-    today_idx = (current_day - start_date).days
+    today_idx = (current_day - img_start_date).days - 2
 
     # draw current day marker as desired
     if current_day:
