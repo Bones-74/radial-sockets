@@ -1,6 +1,6 @@
 app
 {
-  update_timer 10
+  update_timer 1000
   webserver_port 30080
   location -1.82:52.9
   front-panel-present 0
@@ -80,8 +80,8 @@ socket
   # on at 30mins before sunset; random 5mins (27:30 - 32:30) if > 17:00
   states
   [
-    0 on @  ss-00:30
-    1 off @  23:50
+    0 on @  ss-00:30~00:03
+    1 off @  23:50~00:03
   ]
 }
 
