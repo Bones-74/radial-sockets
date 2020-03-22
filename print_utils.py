@@ -6,6 +6,7 @@ Created on 10 May 2019
 from datetime import timedelta
 from PIL import Image, ImageDraw, ImageFont
 import os
+import errno
 
 #from relay import relay_process
 from status import PowerStatus
@@ -129,11 +130,25 @@ def print_days(start_date, end_date, config, _status, socket_name, step=10):
 def print_day_image(fn, date, config, socket_name, image_width=800, day_height=5):
     return print_days_image(fn, date, date, config, socket_name, image_width, day_height=3)
 
-def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5, strobe=1):
+
+def modifyStartDate(start_date, end_date):
+    # If the time between start ad end date is larger than 2 months (say 70 days) then adjust the start
+    # to be on the 1st of the start month.
+    if (end_date - start_date).days > 70:
+        start_date = start_date.replace(day=1)
+        start_date = start_date - timedelta(days = 1)
+
     # start/finish one day before/efter the required time frame
     # We do not print the img_start_date, but collect info on it so we know the starting
     # power for the 'real' start_date
-    img_start_date = start_date - timedelta(days = 1)
+    modded_start_date = start_date - timedelta(days = 1)
+    return modded_start_date
+
+
+def print_days_image(fn, start_date, end_date, config, socket_name, image_width=800, day_height=5, strobe=1):
+    # expand the start date to an appropriate date-time
+    img_start_date = modifyStartDate(start_date, end_date)
+    # expand end_date to just beyond the wanted end date
     img_end_date = end_date + timedelta(days = 1)
 
     transition_seq, ss_sr_seq = get_on_off_times(img_start_date, img_end_date, config, socket_name)
@@ -355,6 +370,10 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
     image_path = os.path.dirname(os.path.abspath(fn))
     try:
         os.makedirs(image_path)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            # this is an acceptable exception
+            pass
     except FileExistsError:
         # this is an acceptable exception
         pass
@@ -362,10 +381,9 @@ def print_days_image(fn, start_date, end_date, config, socket_name, image_width=
 
 
 def overlay_current_day(fn, fn_ovr, start_date, end_date, config, socket_name, current_day, image_width=800, day_height=5):
-    # start/finish one day before/efter the required time frame
-    # We do not print the img_start_date, but collect info on it so we know the starting
-    # power for the 'real' start_date
-    img_start_date = start_date - timedelta(days = 1)
+    # expand the start date to an appropriate date-time
+    img_start_date = modifyStartDate(start_date, end_date)
+    # expand end_date to just beyond the wanted end date
     img_end_date = end_date + timedelta(days = 1)
 
     MINS_IN_DAY = 60 * 24

@@ -24,8 +24,8 @@ SINGLE_DAY_MAP_FN = 'sday'
 MULTI_DAY_MAP_FN = 'mday'
 
 
-#host_addr = "192.168.1.127"
-host_addr = "127.0.0.1"
+host_addr = "192.168.1.127"
+#host_addr = "127.0.0.1"
 #host_addr = "*"
 host_port = "30080"
 websvr = "{}:{}".format(host_addr, host_port)
