@@ -6,6 +6,14 @@ app
   front-panel-present 0
 }
 
+mqtt
+{
+  server 192.168.1.135
+  port 0
+  user mqttuser
+  pass mqttpass
+}
+
 board
 {
   name b1

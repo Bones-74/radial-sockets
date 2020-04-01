@@ -1,6 +1,8 @@
 import threading
 import time
 
+import paho.mqtt.client as mqtt
+
 from status import PowerStatus
 from boards.ft232h import ada_ft232h
 from boards.b01 import B01
@@ -9,7 +11,6 @@ from boards.mcp23017 import mcp23017
 from activation_time import ActivationTime
 from boards import board_interface
 
-
 class config_kw():
     APP_KW = 'app'
     APP_TIMER_KW = 'update_timer'
@@ -17,6 +18,12 @@ class config_kw():
     APP_SOCKET_PORT = 'socket_port'
     APP_LOCATION_COORDS = 'location'
     APP_FRONT_PANEL_KW = 'front-panel-present'
+
+    MQTT_KW = 'mqtt'
+    MQTT_SERVER_KW = 'server'
+    MQTT_PORT_KW = 'port'
+    MQTT_USER_KW = 'user'
+    MQTT_PASS_KW = 'pass'
 
     BOARD_KW = 'board'
     BOARD_NAME_KW = 'name'
@@ -80,6 +87,46 @@ class App(object):
 
         app = App(app_timeout, coords, socket_port, webserver_port, front_panel_present)
         return app
+
+
+class Mqtt(object):
+    MQTT_SINGLE_RUN_TIMER = 0
+    MQTT_DEFAULT_SOCKET_PORT = 30000
+    MQTT_DEFAULT_WEB_SERVER_PORT = 30080
+    MQTT_MISSING_TXT = "**missing**"
+    MQTT_MISSING_VALUE = -1
+    def __init__(self, server, port, user, passw):
+        self.server = server
+        self.port = port
+        self.user = user
+        self.passw = passw
+
+    def clone (self):
+        return App(self.server, self.port, self.user, self.passw)
+
+    MQTT_SERVER_KW = 'server'
+    MQTT_PORT_KW = 'port'
+    MQTT_USER_KW = 'user'
+    MQTT_PASS_KW = 'pass'
+    @staticmethod
+    def parse_mqtt (app_def):
+        mqtt_server = Mqtt.MQTT_MISSING_TXT
+        mqtt_port = Mqtt.MQTT_MISSING_VALUE
+        mqtt_user = Mqtt.MQTT_MISSING_VALUE
+        mqtt_pass = Mqtt.MQTT_MISSING_VALUE
+        for line in app_def:
+            line_parts = line.split()
+            if line_parts[0].strip() == config_kw.MQTT_SERVER_KW:
+                mqtt_server = line_parts[1].strip()
+            elif line_parts[0].strip() == config_kw.MQTT_PORT_KW:
+                mqtt_port = int(line_parts[1].strip())
+            elif line_parts[0].strip() == config_kw.MQTT_USER_KW:
+                mqtt_user = line_parts[1].strip()
+            elif line_parts[0].strip() == config_kw.MQTT_PASS_KW:
+                mqtt_pass = line_parts[1].strip()
+
+        mqtt_cfg = Mqtt(mqtt_server, mqtt_port, mqtt_user, mqtt_pass)
+        return mqtt_cfg
 
 
 class Board(object):
@@ -196,11 +243,41 @@ class Socket(object):
         self.mon_ovr_on = {}
         self.mon_auto_on = {}
         self.control_pwr = {}
+        self.control = None
 
         self.refresh_day_image = False
+        self.mqtt_client = None
+        self.mqtt_state = None
 
         #self.current_state = STATE_NOT_ASSIGNED
         #self.current_pwr_state = STATE_NOT_ASSIGNED
+
+    def mqtt_init(self, mqtt_info):
+        client = mqtt.Client(self.name)
+        client.on_message = self.on_mqtt_message
+        client.username_pw_set(mqtt_info.user, mqtt_info.passw)
+        client.connect(mqtt_info.server)
+        #MJA:TODO:quick test: pretend it's a temperature sensor (that returns 0 or 1)
+        self.mqtt_state_txt = self.name + "/switch1"
+        (res, mid) = client.subscribe(self.mqtt_state_txt + "/set")
+        #(res, mid) = client.subscribe(self.mqtt_state_txt)
+        if (res != mqtt.MQTT_ERR_SUCCESS):
+            return Config.CONFIG_ERROR_MQTT_TOPIC_SUBSCRIBE_ERROR
+
+        client.loop_start()
+
+        self.mqtt_client = client
+        return Config.CONFIG_OK
+
+    def on_mqtt_message(self, client, userdata, message):
+        state_txt = str(message.payload.decode("utf-8"))
+        try:
+            self.mqtt_state = PowerStatus.ParsePwrSts(state_txt)
+        except:
+            self.mqtt_state = None
+
+        if self.control:
+            self.control.fire_single_run()
 
     def invalidate_image(self):
         self.refresh_day_image = True
@@ -233,6 +310,9 @@ class Socket(object):
     def add_control_pwr_gpio(self, control_pwr):
         self.control_pwr = control_pwr
 
+    def add_control(self, control):
+        self.control = control
+
     def calc_status(self, skt_status, timenow):
         # using the current status of the socket, as read from the status file,
         # and the current date/time, work out which state this socket should
@@ -250,6 +330,10 @@ class Socket(object):
 
         skt_status.calcd_state = next_state.id
         skt_status.calcd_auto_sts = next_state.power_state
+
+        if self.mqtt_state is not None:
+            skt_status.calcd_auto_sts = self.mqtt_state
+
 
     def calc_activate_times_for_states(self, timenow):
         # calculate the active states for this socket for the
@@ -370,12 +454,14 @@ class Config(object):
     CONFIG_ERROR_SOCKET_STATE_BADLY_DEFINED = 12
     CONFIG_ERROR_SOCKET_STATE_ACTIVATION_TIME_INVALID = 13
     CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED = 14
+    CONFIG_ERROR_MQTT_TOPIC_SUBSCRIBE_ERROR = 15
 
 
     def __init__(self):
         self.boards = {}
         self.sockets = {}
         self.app = None
+        self.mqtt = None
         self.active_sockets = []
 
     def init(self):
@@ -392,6 +478,12 @@ class Config(object):
                 if ret1 or ret2 or ret3:
                     return self.CONFIG_ERROR_BOARD_CHANNEL_ALREADY_ASSIGNED
 
+                # Now add the MQTT connection
+                if self.mqtt is not None:
+                    retcode = socket.mqtt_init(self.mqtt)
+                    if retcode:
+                        return self.CONFIG_ERROR_MQTT_TOPIC_SUBSCRIBE_ERROR
+
 #        for _board_name, board in self.boards.items():
 #            board.init()
 
@@ -399,6 +491,9 @@ class Config(object):
 
     def add_app (self, app):
         self.app = app
+
+    def add_mqtt (self, mqtt_cfg):
+        self.mqtt = mqtt_cfg
 
     def add_board (self, new_board):
         self.boards[new_board.name] = new_board
@@ -478,7 +573,7 @@ class Config(object):
         return cfg_clone
 
     @staticmethod
-    def parse_config_info(config_arr):
+    def parse_config_info(config_arr, control=None):
         FIND_TYPE = 0
         GET_BOARD = 1
         GET_SOCKET = 2
@@ -488,6 +583,7 @@ class Config(object):
         GET_SOCKET_CONTROL_PWR = 6
         GET_APP = 7
         GET_ACTIVE = 8
+        GET_MQTT = 9
 
         config = Config()
         states = {}
@@ -496,6 +592,7 @@ class Config(object):
         control_pwr = None
 
         app_text = []
+        mqtt_text = []
         board_text = []
         socket_text = []
         active_text = []
@@ -523,6 +620,9 @@ class Config(object):
                 elif line == config_kw.APP_KW:
                     app_text = []
                     state = GET_APP
+                elif line == config_kw.MQTT_KW:
+                    mqtt_text = []
+                    state = GET_MQTT
                 elif line == config_kw.ACTIVE_LIST_KW:
                     active_text = []
                     state = GET_ACTIVE
@@ -545,6 +645,7 @@ class Config(object):
                     config.add_socket(socket)
                     socket.add_monitor_gpio(monitor_skts, monitor_ovr_on)
                     socket.add_control_pwr_gpio(control_pwr)
+                    socket.add_control(control)
                     monitor_skts = None
                     monitor_ovr_on = None
                     control_pwr = None
@@ -617,6 +718,16 @@ class Config(object):
                 else:
                     if line[0] != config_kw.COMMENT_CHAR:
                         config.active_sockets.append(line.strip())
+
+            elif state == GET_MQTT:
+                if line == '{':
+                    pass
+                elif line == '}':
+                    mqtt_cfg = Mqtt.parse_mqtt(mqtt_text)
+                    config.add_mqtt(mqtt_cfg)
+                    state = FIND_TYPE
+                else:
+                    mqtt_text.append(line)
 
         if config.init():
             exit(-15)

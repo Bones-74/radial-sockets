@@ -19,7 +19,7 @@ from webserver.webserver_01 import web_svr, webserver_set_config_status
 # ############################################################
 # ############debugging start#################################
 # ############################################################
-DEBUG=False
+DEBUG=True
 if DEBUG:
     sys.path.append(r'/home/pi/pysrc')
     import pydevd
@@ -129,10 +129,10 @@ def read_input_files(cfg_fn, sts_fn):
     return config, status
 
 
-def parse_input_info(cfg_arr, sts_arr):
+def parse_input_info(cfg_arr, sts_arr, control=None):
     # read the config and status files
     if cfg_arr:
-        config = Config.parse_config_info(cfg_arr)
+        config = Config.parse_config_info(cfg_arr, control)
     else:
         config = None
     if sts_arr:
@@ -339,11 +339,17 @@ def send_next_statuses (control, socket_cfg, socket_sts, board):
         pwr_history = socket_sts.history["pwr"]
         pwr_history.append((timenow, new_pwr_status))
         socket_sts.actual_pwr = new_pwr_status
-        if socket_sts.name == "hall03":
-            print ("{0}: {1}".format(timenow, new_pwr_status))
 
     if not control.simulate_run:
         board.set_relay_state(new_pwr_status, socket_cfg.control_pwr.channel)
+        # update mqtt server if present
+        if socket_cfg.mqtt_client:
+            pwr_sts_txt = PowerStatus.GetStr(new_pwr_status)
+            socket_cfg.mqtt_client.publish(socket_cfg.mqtt_state_txt, pwr_sts_txt)
+
+
+def relay_process_overrides(overrides):
+    relay_process(control, config, status, overrides)
 
 
 sem = threading.Semaphore()
@@ -516,7 +522,8 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
         cfg_arr, sts_arr = read_input_files(config_file, status_file)
 
     # Process the input information
-    config, status = parse_input_info(cfg_arr, sts_arr)
+    control = Control()
+    config, status = parse_input_info(cfg_arr, sts_arr, control)
     if config:
         config.filename = config_file
     else:
@@ -545,7 +552,6 @@ def main__1st_run_from_commandline(args=None,debug_in=None):
         return validation_res, None
 
     # now take the info read from the config and status files and process the info
-    control = Control()
     set_location_coords (config.app.coords)
     ret_code = relay_process(control, config, status, new_overrides)
     if ret_code:

@@ -11,6 +11,11 @@ class Control(object):
         self.time = None
         self.simulate_run = False
 
+    def fire_single_run(self):
+        # Activate the event to let the desired
+        # functionality run
+        self.run_event.set()
+
     def schedule_logic_run(self):
         # Activate the event to let the desired
         # functionality run
