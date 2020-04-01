@@ -400,7 +400,7 @@ def overlay_current_day(fn, fn_ovr, start_date, end_date, config, socket_name, c
     # build up the image day-by-day
     draw = ImageDraw.Draw(img)
     last_datetime = None
-    today_idx = (current_day - img_start_date).days - 2
+    today_idx = (current_day - img_start_date).days - 1
 
     # draw current day marker as desired
     if current_day:
